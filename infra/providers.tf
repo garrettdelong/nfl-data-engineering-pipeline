@@ -24,4 +24,3 @@ provider "aws" {
 #   host = var.databricks_host   # e.g. https://<workspace>.databricks.com
 #   token = var.databricks_token # store in env var or tfvars, not in code
 # }
- 
