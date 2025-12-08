@@ -1,4 +1,3 @@
-/*
 # Trust policy: who can assume this role (Snowflake side)
 data "aws_iam_policy_document" "snowflake_assume_role" {
     statement {
@@ -7,20 +6,23 @@ data "aws_iam_policy_document" "snowflake_assume_role" {
         principals {
             type = "AWS"
             identifiers = [ 
-                # Replace this with Snowflake's AWS IAM user/role ARN,
-                # which you'll get from Snowflake when you set up the external stage
-                "arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME"
+                var.snowflake_principal_arn
             ]
         }
 
         actions = ["sts:AssumeRole"]
+
+        condition {
+            test = "StringEquals"
+            variable = "sts:ExternalId"
+            values = [var.snowflake_external_id]
+        }
     }
 }
 
 resource "aws_iam_role" "snowflake_external_role" {
     name = var.snowflake_external_role_name
     assume_role_policy = data.aws_iam_policy_document.snowflake_assume_role.json
-
 
     tags = local.common_tags
 }
@@ -51,4 +53,3 @@ resource "aws_iam_role_policy_attachment" "snowflake_s3_attach" {
     role = aws_iam_role.snowflake_external_role.name
     policy_arn = aws_iam_policy.snowflake_s3_policy.arn
 }
-*/

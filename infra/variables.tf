@@ -34,3 +34,13 @@ variable "snowflake_external_role_name" {
     description = "IAM role name for Snowflake S3 access"
     default = "snowflake-nfl-external-role"
 }
+
+variable "snowflake_principal_arn" {
+    type = string
+    description = "Snowflake AWS IAM user/role ARN from DESC STORAGE INTEGRATION"
+}
+
+variable "snowflake_external_id" {
+    type = string
+    description = "Snowflake external ID from DESC STORAGE INTEGRATION"
+}
