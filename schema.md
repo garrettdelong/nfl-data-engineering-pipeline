@@ -1,3 +1,4 @@
+```mermaid
 erDiagram
     dim_date {
         int      date_key PK
@@ -11,7 +12,7 @@ erDiagram
     dim_season {
         string   season_key PK
         int      season_year
-        string   season_type  // REG, POST
+        string   season_type  
         date     season_start_date
         date     season_end_date
     }
@@ -178,3 +179,4 @@ erDiagram
     dim_venue  ||--o{ dim_game                : "venue_key"
 
     dim_play_type ||--o{ fct_play             : "play_type_key"
+```
