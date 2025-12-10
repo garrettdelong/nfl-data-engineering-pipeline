@@ -19,7 +19,7 @@ def table_by_year_ingest(BUCKET_NAME, s3, base_url, years, table_name, folder):
             # Stream response content directly into S3
             s3.upload_fileobj(response.raw, BUCKET_NAME, s3_key)
 
-        print("✅ All available files uploaded directly to S3.")
+    print("✅ All available files uploaded directly to S3.")
 
 def table_single_file_ingest(BUCKET_NAME, s3, base_url, table_name, folder):
     url = f"{base_url}/{folder}/{table_name}.parquet"
@@ -67,11 +67,12 @@ def main():
         help="Which table to ingest")
     
     args = parser.parse_args()
-    if not args.table in INGEST_FUNCTIONS:
-        raise ValueError(f"Table {args.table} not recognized. Choose from {list(INGEST_FUNCTIONS.keys())}")
-    elif args.table == "all":
+    
+    if args.table == "all":
         for folder, table_name in INGEST_FUNCTIONS.items():
-            if folder in ["schedules", "teams"]: 
+            if folder == 'all':
+                continue
+            elif folder in ["schedules", "teams"]: 
                 table_single_file_ingest(BUCKET_NAME, s3, base_url, table_name, folder)
             else:
                 table_by_year_ingest(BUCKET_NAME, s3, base_url, years, table_name, folder)
