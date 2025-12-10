@@ -1,5 +1,3 @@
-#import pandas as pd
-#import pyarrow.parquet as pq
 import requests
 import os
 from datetime import datetime
