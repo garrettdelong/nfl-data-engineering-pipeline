@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: nfl_raw
+    description: Raw nfl data from nflverse
+    database: NFL_RAW
+    schema: PLAY_BY_PLAY
+    tables:
+      - name: v_raw_pbp_flat
+        description: Play by Play data from nflverse
+      - name: v_raw_player_pbp_stats_flat
+        description: Player Play by Play stats from nflverse
+      - name: v_raw_schedule_flat
+        description: Schedule data from nflverse
+      - name: v_raw_stats_team_weekly_flat
+        description: Team weekly stats from nflverse  
+      - name: v_raw_teams_flat
+        description: Teams data from nflverse
+      - name: v_raw_weekly_rosters_flat
+        description: Weekly rosters data from nflverse 
+      
+      
