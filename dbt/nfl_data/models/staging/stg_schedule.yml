@@ -1,0 +1,108 @@
+version: 2
+
+models:
+  - name: stg_nfl__schedule
+    description: "Staging model for nflverse schedule/game data (from v_raw_schedule_flat)."
+    columns:
+      - name: game_id
+        description: "Human-readable game ID: season_week_away_home. Primary identifier used across nflverse datasets."
+      - name: season
+        description: "NFL season year (regular season games in January and playoffs can occur in the calendar year after this)."
+      - name: game_type
+        description: "Game type: one of REG, WC, DIV, CON, SB."
+      - name: week
+        description: "Week number of the NFL season. Use game_type to separate regular season vs postseason (weeks >= 18 differ after 2021 expansion)."
+      - name: gameday
+        description: "Date the game occurred."
+      - name: weekday
+        description: "Day of week the game occurred."
+      - name: gametime
+        description: "Kickoff time in 24-hour format, Eastern Time (regardless of stadium timezone)."
+
+      - name: away_team
+        description: "Away team abbreviation."
+      - name: away_score
+        description: "Away team points scored (null for games not yet played)."
+      - name: home_team
+        description: "Home team abbreviation (designated home team even for neutral-site games)."
+      - name: home_score
+        description: "Home team points scored (null for games not yet played)."
+
+      - name: location
+        description: "Home if the home team is in their home stadium; Neutral if played at a neutral location (still Home for Giants/Jets despite shared stadium)."
+      - name: result
+        description: "Home score minus away score (h_score - v_score). Null for unplayed games. Useful for spread evaluation."
+      - name: total
+        description: "Total points scored (h_score + v_score). Null for unplayed games. Useful for over/under evaluation."
+      - name: overtime
+        description: "Overtime indicator (typically 1 if game went to OT, 0 otherwise)."
+
+      - name: old_game_id
+        description: "Legacy NFL-assigned game ID."
+      - name: gsis
+        description: "NFL Game Statistics & Information System (GSIS) game ID."
+      - name: nfl_detail_id
+        description: "NFL Detail game ID."
+      - name: pfr
+        description: "Pro-Football-Reference game ID."
+      - name: pff
+        description: "Pro Football Focus game ID."
+      - name: espn
+        description: "ESPN game ID."
+
+      - name: away_rest
+        description: "Days of rest for the away team entering the game."
+      - name: home_rest
+        description: "Days of rest for the home team entering the game."
+
+      - name: away_moneyline
+        description: "Moneyline odds for the away team to win."
+      - name: home_moneyline
+        description: "Moneyline odds for the home team to win."
+
+      - name: spread_line
+        description: "Point spread line. Positive means home favored by that many points; negative means away favored. Aligns with result."
+      - name: away_spread_odds
+        description: "Odds for away team to cover the spread."
+      - name: home_spread_odds
+        description: "Odds for home team to cover the spread."
+
+      - name: total_line
+        description: "Over/under total points line."
+      - name: under_odds
+        description: "Odds total points will be under total_line."
+      - name: over_odds
+        description: "Odds total points will be over total_line."
+
+      - name: div_game
+        description: "Division-game indicator (typically 1 if teams are in the same division, 0 otherwise)."
+
+      - name: roof
+        description: "Stadium roof status: outdoors, open, closed, dome."
+      - name: surface
+        description: "Playing surface type."
+      - name: temp
+        description: "Stadium temperature (outdoors/open roof only)."
+      - name: wind
+        description: "Wind speed in mph (outdoors/open roof only)."
+
+      - name: away_qb_id
+        description: "GSIS player ID for the away team's starting QB."
+      - name: home_qb_id
+        description: "GSIS player ID for the home team's starting QB."
+      - name: away_qb_name
+        description: "Name of the away team's starting QB."
+      - name: home_qb_name
+        description: "Name of the home team's starting QB."
+
+      - name: away_coach
+        description: "Away team head coach name."
+      - name: home_coach
+        description: "Home team head coach name."
+      - name: referee
+        description: "Referee (head official) name."
+
+      - name: stadium_id
+        description: "Stadium ID where the game took place."
+      - name: stadium
+        description: "Stadium name."
