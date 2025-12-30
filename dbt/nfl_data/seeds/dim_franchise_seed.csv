@@ -1,0 +1,33 @@
+franchise_id,franchise_name,primary_team_code,conference,division
+cardinals,Arizona Cardinals,ARI,NFC,West
+falcons,Atlanta Falcons,ATL,NFC,South
+ravens,Baltimore Ravens,BAL,AFC,North
+bills,Buffalo Bills,BUF,AFC,East
+panthers,Carolina Panthers,CAR,NFC,South
+bears,Chicago Bears,CHI,NFC,North
+bengals,Cincinnati Bengals,CIN,AFC,North
+browns,Cleveland Browns,CLE,AFC,North
+cowboys,Dallas Cowboys,DAL,NFC,East
+broncos,Denver Broncos,DEN,AFC,West
+lions,Detroit Lions,DET,NFC,North
+packers,Green Bay Packers,GB,NFC,North
+texans,Houston Texans,HOU,AFC,South
+colts,Indianapolis Colts,IND,AFC,South
+jaguars,Jacksonville Jaguars,JAX,AFC,South
+chiefs,Kansas City Chiefs,KC,AFC,West
+raiders,Las Vegas Raiders,LV,AFC,West
+chargers,Los Angeles Chargers,LAC,AFC,West
+rams,Los Angeles Rams,LAR,NFC,West
+dolphins,Miami Dolphins,MIA,AFC,East
+vikings,Minnesota Vikings,MIN,NFC,North
+patriots,New England Patriots,NE,AFC,East
+saints,New Orleans Saints,NO,NFC,South
+giants,New York Giants,NYG,NFC,East
+jets,New York Jets,NYJ,AFC,East
+eagles,Philadelphia Eagles,PHI,NFC,East
+steelers,Pittsburgh Steelers,PIT,AFC,North
+forty_niners,San Francisco 49ers,SF,NFC,West
+seahawks,Seattle Seahawks,SEA,NFC,West
+buccaneers,Tampa Bay Buccaneers,TB,NFC,South
+titans,Tennessee Titans,TEN,AFC,South
+commanders,Washington Commanders,WSH,NFC,East
