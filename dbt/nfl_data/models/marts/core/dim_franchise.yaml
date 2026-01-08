@@ -9,7 +9,7 @@ models:
         tests:
           - not_null
           - unique
-      - name: primary_team_code
+      - name: team_code
         description: Current team abbreviatio for the franchise.
         tests:
           - not_null

@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: dim_team_code
+    columns:
+      - name: source_team_code
+        tests:
+          - not_null
+          - unique
+
+      - name: team_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: team_code
+
+      - name: franchise_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id

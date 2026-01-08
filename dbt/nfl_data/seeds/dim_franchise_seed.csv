@@ -1,4 +1,4 @@
-franchise_id,franchise_name,primary_team_code,conference,division
+franchise_id,franchise_name,team_code,conference,division
 cardinals,Arizona Cardinals,ARI,NFC,West
 falcons,Atlanta Falcons,ATL,NFC,South
 ravens,Baltimore Ravens,BAL,AFC,North
