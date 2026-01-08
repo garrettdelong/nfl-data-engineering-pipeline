@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: dim_game
+    description: "One row per game_id. Cleaned schedule-level dimension with canonical home/away franchise keys."
+    columns:
+      - name: game_id
+        description: "Primary key for the game."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: season
+        description: "Season year."
+        data_tests:
+          - not_null
+
+      - name: game_type
+        description: "Game type (regular season, postseason, etc.)."
+        data_tests:
+          - not_null
+
+      - name: week
+        description: "Week number within the season."
+        data_tests:
+          - not_null
+
+      - name: gameday
+        description: "Game date."
+        data_tests:
+          - not_null
+
+      - name: home_franchise_id
+        description: "Home team franchise id (FK to dim_franchise.franchise_id)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
+
+      - name: away_franchise_id
+        description: "Away team franchise id (FK to dim_franchise.franchise_id)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
