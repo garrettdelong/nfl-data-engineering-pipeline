@@ -36,7 +36,7 @@ team_counts AS (
   SELECT
     mapped.player_id,
     mapped.season,
-    mapped.team_code,
+    mapped.franchise_id,
     COUNT(DISTINCT mapped.week) AS weeks_on_team,
     MAX(mapped.week) AS last_week_on_team
   FROM mapped
@@ -44,14 +44,14 @@ team_counts AS (
   GROUP BY
     mapped.player_id,
     mapped.season,
-    mapped.team_code
+    mapped.franchise_id
 ),
 
 primary_team AS (
     SELECT
         team_counts.player_id,
         team_counts.season,
-        team_counts.team_code,
+        team_counts.franchise_id,
         team_counts.weeks_on_team,
         team_counts.last_week_on_team,
         ROW_NUMBER() OVER (
@@ -59,7 +59,7 @@ primary_team AS (
         ORDER BY
             team_counts.weeks_on_team DESC,
             team_counts.last_week_on_team DESC,
-            team_counts.team_code ASC  -- deterministic tiebreaker
+            team_counts.franchise_id ASC  -- deterministic tiebreaker
         ) AS rn
     FROM team_counts
 ),
@@ -69,7 +69,7 @@ latest_record AS (
     mapped.player_id,
     mapped.season,
     mapped.week,
-    mapped.team_code,
+    mapped.franchise_id,
     mapped.player_position,
     mapped.jersey_number,
     mapped.years_exp,
@@ -86,7 +86,7 @@ latest_player_season AS (
     latest_record.player_id,
     latest_record.season,
     latest_record.week,
-    latest_record.team_code,
+    latest_record.franchise_id,
     latest_record.player_position,
     latest_record.jersey_number,
     latest_record.years_exp,
@@ -98,7 +98,7 @@ latest_player_season AS (
 SELECT
   latest_player_season.player_id,
   latest_player_season.season,
-  primary_team.team_code,
+  primary_team.franchise_id,
   latest_player_season.player_position,
   latest_player_season.jersey_number,
   latest_player_season.years_exp,
