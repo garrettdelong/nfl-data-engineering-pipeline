@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: dim_player
+    description: "One row per player_id (gsis_id). Player identity attributes sourced from weekly rosters, deduped to latest season/week."
+    columns:
+      - name: player_id
+        description: "Primary key for the player (gsis_id)."
+        data_tests:
+          - not_null
+          - unique
