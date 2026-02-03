@@ -1,6 +1,6 @@
-with ranked as (
-  select
-    gsis_id as player_id,
+WITH ranked AS (
+  SELECT
+    gsis_id AS player_id,
     full_name,
     first_name,
     last_name,
@@ -12,15 +12,15 @@ with ranked as (
     rookie_year,
     draft_club,
     draft_number,
-    row_number() over (
-      partition by gsis_id
-      order by season desc, week desc
-    ) as rn
-  from {{ ref('stg_weekly_rosters') }}
-  where gsis_id is not null
+    ROW_NUMBER() OVER (
+      PARTITION BY gsis_id
+      ORDER BY season DESC, week DESC
+    ) AS rn
+  FROM {{ ref('stg_weekly_rosters') }}
+  WHERE gsis_id IS NOT NULL
 )
 
-select
+SELECT
   player_id,
   full_name,
   first_name,
@@ -33,5 +33,5 @@ select
   rookie_year,
   draft_club,
   draft_number
-from ranked
-where rn = 1;
+FROM ranked
+WHERE rn = 1
