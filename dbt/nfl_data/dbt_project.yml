@@ -37,3 +37,7 @@ models:
     marts:
       +schema: "marts"
       +materialized: table
+
+seeds:
+  nfl_data:
+    +schema: SEEDS

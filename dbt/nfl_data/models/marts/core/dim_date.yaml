@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: "Date dimension (1 row per calendar date)."
+    columns:
+      - name: date
+        description: "Calendar date (PK)."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: date_key
+        description: "Numeric date key in YYYYMMDD format."

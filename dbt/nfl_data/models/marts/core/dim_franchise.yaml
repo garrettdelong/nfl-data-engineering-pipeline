@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: dim_franchise
+    description: One row per NFL franchise. Stable identifier for teams across reolcations and abbrevations changes.
+    columns: 
+      - name: franchise_id
+        description: Stable franchise identifier and primary key.
+        tests:
+          - not_null
+          - unique
+      - name: team_code
+        description: Current team abbreviatio for the franchise.
+        tests:
+          - not_null
