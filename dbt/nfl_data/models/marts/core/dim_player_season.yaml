@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_player_season
+    description: "One row per (player_id, season). Season-level player context sourced from weekly rosters (e.g., position/experience/team for that season)."
+    columns:
+      - name: player_id
+        description: "Player identifier (gsis_id). FK to dim_player.player_id."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_player')
+                field: player_id
+
+      - name: season
+        description: "Season year."
+        data_tests:
+          - not_null
+
+      - name: franchise_id
+        description: "Primary franchise for the player in that season (logical FK to dim_franchise.franchise_id)."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
