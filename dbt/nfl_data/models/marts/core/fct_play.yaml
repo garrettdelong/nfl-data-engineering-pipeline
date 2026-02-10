@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: fct_play
+    description: "Play-level fact table (1 row per play). Primary key is the composite (game_id, play_id)."
+    columns:
+      - name: game_id
+        description: "Game identifier. Part of the composite primary key."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_game')
+                field: game_id
+
+      - name: play_id
+        description: "Play identifier within a game. Part of the composite primary key."
+        data_tests:
+          - not_null
+
+      - name: offense_franchise_id
+        description: "Offense franchise_id derived from posteam via dim_team_code."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
+
+      - name: defense_franchise_id
+        description: "Defense franchise_id derived from defteam via dim_team_code."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
