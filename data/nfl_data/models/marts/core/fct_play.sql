@@ -33,7 +33,13 @@ WITH pbp AS (
     stg_pbp.fumble_forced,
     stg_pbp.series,
     stg_pbp.drive,
-    stg_pbp.series
+    stg_pbp.series,
+    stg_pbp.penalty_team,
+    stg_pbp.penalty_player_id,
+    stg_pbp.penalty_player_name,
+    stg_pbp.penalty_yards,
+    stg_pbp.penalty_type,
+    stg_pbp.penalty
   FROM {{ ref('stg_pbp') }} AS stg_pbp
   WHERE stg_pbp.game_id IS NOT NULL
     AND stg_pbp.play_id IS NOT NULL
@@ -73,7 +79,13 @@ mapped AS (
     pbp.fumble_lost,
     pbp.fumble_forced,
     pbp.series,
-    pbp.drive
+    pbp.drive,
+    pbp.penalty_team,
+    pbp.penalty_player_id,
+    pbp.penalty_player_name,
+    pbp.penalty_yards,
+    pbp.penalty_type,
+    pbp.penalty
   FROM pbp
   LEFT JOIN {{ ref('dim_team_code') }} AS offense_tc
     ON offense_tc.source_team_code = pbp.offense_team_code_raw
@@ -114,5 +126,11 @@ SELECT
   mapped.fumble_lost,
   mapped.fumble_forced,
   mapped.series,
-  mapped.drive
+  mapped.drive,
+  mapped.penalty_team,
+  mapped.penalty_player_id,
+  mapped.penalty_player_name,
+  mapped.penalty_yards,
+  mapped.penalty_type,
+  mapped.penalty
 FROM mapped

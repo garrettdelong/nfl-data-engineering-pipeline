@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: fct_game
+    description: "Game-level fact table (1 row per game_id) built from schedule measures plus play-derived aggregates."
+    columns:
+      - name: game_id
+        description: "Game identifier. Primary key for fct_game."
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_game')
+                field: game_id
