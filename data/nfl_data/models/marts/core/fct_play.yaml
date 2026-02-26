@@ -25,6 +25,7 @@ models:
               arguments:
                 to: ref('dim_franchise')
                 field: franchise_id
+          - not_null
 
       - name: defense_franchise_id
         description: "Defense franchise_id derived from defteam via dim_team_code."
@@ -33,3 +34,4 @@ models:
               arguments:
                 to: ref('dim_franchise')
                 field: franchise_id
+          - not_null

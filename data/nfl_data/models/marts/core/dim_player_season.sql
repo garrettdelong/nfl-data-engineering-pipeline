@@ -1,17 +1,18 @@
 WITH mapped AS (
   SELECT
-    stg_weekly_rosters.player_id,
-    stg_weekly_rosters.season,
-    stg_weekly_rosters.week,
+    gsis_id AS player_id,
+    season,
+    week,
+    team AS team_code,
+    player_position,
+    jersey_number,
+    years_exp,
+    weight,
     dim_team_code.team_code,
     dim_team_code.franchise_id,
-    stg_weekly_rosters.player_position,
-    stg_weekly_rosters.jersey_number,
-    stg_weekly_rosters.years_exp,
-    base.weight
   FROM {{ ref('stg_weekly_rosters') }} AS stg_weekly_rosters
   INNER JOIN {{ ref('dim_team_code') }} AS dim_team_code
-    ON dim_team_code.source_team_code = base.team_code
+    ON dim_team_code.source_team_code = stg_weekly_rosters.team
 ),
 
 -- count weeks per team per season
