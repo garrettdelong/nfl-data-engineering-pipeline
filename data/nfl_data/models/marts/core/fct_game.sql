@@ -35,41 +35,8 @@ play_agg_game AS (
     AVG(CASE WHEN fct_play.play_type != 'no_play' OR fct_play.play_type IS NOT NULL THEN NULL ELSE fct_play.success END) AS success_rate
   FROM {{ ref('fct_play') }} AS fct_play
   GROUP BY fct_play.game_id
-)/*,
-
-play_agg_offense_team AS (
-  SELECT
-    fct_play.game_id,
-    fct_play.offense_franchise_id,
-    COUNT(*) AS offense_play_count,
-    SUM(fct_play.epa) AS offense_epa_sum,
-    AVG(fct_play.success) AS offense_success_rate
-  FROM {{ ref('fct_play') }} AS fct_play
-  WHERE fct_play.no_play = 0
-    AND fct_play.offense_franchise_id IS NOT NULL
-  GROUP BY
-    fct_play.game_id,
-    fct_play.offense_franchise_id
-),
-
-play_agg_home_away AS (
-  SELECT
-    game_base.game_id,
-
-    MAX(CASE WHEN play_agg_offense_team.offense_franchise_id = game_base.home_franchise_id THEN play_agg_offense_team.offense_play_count END) AS home_offense_play_count,
-    MAX(CASE WHEN play_agg_offense_team.offense_franchise_id = game_base.home_franchise_id THEN play_agg_offense_team.offense_epa_sum END) AS home_offense_epa_sum,
-    MAX(CASE WHEN play_agg_offense_team.offense_franchise_id = game_base.home_franchise_id THEN play_agg_offense_team.offense_success_rate END) AS home_offense_success_rate,
-
-    MAX(CASE WHEN play_agg_offense_team.offense_franchise_id = game_base.away_franchise_id THEN play_agg_offense_team.offense_play_count END) AS away_offense_play_count,
-    MAX(CASE WHEN play_agg_offense_team.offense_franchise_id = game_base.away_franchise_id THEN play_agg_offense_team.offense_epa_sum END) AS away_offense_epa_sum,
-    MAX(CASE WHEN play_agg_offense_team.offense_franchise_id = game_base.away_franchise_id THEN play_agg_offense_team.offense_success_rate END) AS away_offense_success_rate
-
-  FROM game_base
-  LEFT JOIN play_agg_offense_team
-    ON play_agg_offense_team.game_id = game_base.game_id
-  GROUP BY game_base.game_id
 )
-*/
+
 SELECT
   game_context.game_id,
   game_context.home_franchise_id,
@@ -95,17 +62,8 @@ SELECT
   play_agg_game.epa_sum,
   play_agg_game.success_rate,
 
-  --play_agg_home_away.home_offense_play_count,
-  --play_agg_home_away.home_offense_epa_sum,
-  --play_agg_home_away.home_offense_success_rate,
-  --play_agg_home_away.away_offense_play_count,
-  --play_agg_home_away.away_offense_epa_sum,
-  --play_agg_home_away.away_offense_success_rate
-
 FROM game_context
 LEFT JOIN schedule_measures
   ON schedule_measures.game_id = game_context.game_id
 LEFT JOIN play_agg_game
   ON play_agg_game.game_id = game_context.game_id
---LEFT JOIN play_agg_home_away
- -- ON play_agg_home_away.game_id = game_base.game_id

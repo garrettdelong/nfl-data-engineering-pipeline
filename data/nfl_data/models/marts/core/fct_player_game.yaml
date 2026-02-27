@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fct_player_game
+    description: Player game fact table at grain (game_id, player_id). Derived from fct_play player roles and joined to dim_game for opponent and home/away context.
+    columns:
+      - name: game_id
+        description: Unique identifier for the game.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_game')
+              field: game_id
+
+      - name: player_id
+        description: Unique identifier for the player (gsis_id).
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_player')
+              field: player_id
+
+      - name: franchise_id
+        description: Franchise identifier for the player for this game.
+        tests:
+          - relationships:
+              to: ref('dim_franchise')
+              field: franchise_id
+
+      - name: opponent_franchise_id
+        description: Opponent franchise identifier for the player for this game.
+        tests:
+          - relationships:
+              to: ref('dim_franchise')
+              field: franchise_id
+
+      - name: game_team_side
+        description: Team side for the player in this game. Values are 'home', 'away', or 'unknown'.
+        tests:
+          - accepted_values:
+              values: ['home', 'away', 'unknown']
+             
