@@ -5,7 +5,7 @@ WITH plays AS (
     fct_play.drive,
     stg_pbp.drive_play_count,
     fct_play.offense_franchise_id,
-    stg_pbp.ydsnet
+    stg_pbp.ydsnet,
     fct_play.epa,
     fct_play.success,
     stg_pbp.drive_inside20,
@@ -20,19 +20,19 @@ WITH plays AS (
 
 drive_agg AS (
   SELECT
-    plays.game_id,
-    plays.drive,
-    plays.offense_franchise_id,
-    plays.drive_play_count,
-    plays.ydsnet,
-    plays.drive_inside20,
-    plays.drive_ended_with_score,
-    SUM(plays.epa) AS epa_sum,
-    AVG(plays.success) AS success_rate,
-  FROM plays
-  GROUP BY
-    plays.game_id,
-    plays.drive
+    game_id,
+    drive,
+    MAX(offense_franchise_id) AS offense_franchise_id,
+    MAX(drive_play_count) AS drive_play_count,
+    MAX(ydsnet) AS yards_gained_sum,
+    MAX(drive_inside20) AS drive_inside20,
+    MAX(drive_ended_with_score) AS drive_ended_with_score,
+    SUM(epa) AS epa_sum,
+    AVG(success) AS success_rate
+    FROM plays
+    GROUP BY
+      game_id,
+      drive
 )
 
 SELECT
@@ -40,7 +40,7 @@ SELECT
   drive_agg.drive,
   drive_agg.offense_franchise_id,
   drive_agg.drive_play_count,
-  drive_agg.ydsnet AS yards_gained_sum,
+  drive_agg.yards_gained_sum,
   drive_agg.epa_sum,
   drive_agg.success_rate,
   drive_agg.drive_inside20,
