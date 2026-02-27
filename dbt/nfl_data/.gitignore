@@ -1,8 +1,0 @@
-
-target/
-dbt_packages/
-logs/
-dbt_internal_packages/
-data/duckdb_s3/
-*.duckdb
-*.wal

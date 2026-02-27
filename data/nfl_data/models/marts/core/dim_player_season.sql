@@ -1,4 +1,4 @@
-WITH base AS (
+WITH mapped AS (
   SELECT
     gsis_id AS player_id,
     season,
@@ -7,28 +7,12 @@ WITH base AS (
     player_position,
     jersey_number,
     years_exp,
-    weight
-  FROM {{ ref('stg_weekly_rosters') }}
-  WHERE gsis_id IS NOT NULL
-    AND season IS NOT NULL
-    AND week IS NOT NULL
-),
-
--- canonicalize team codes (so STL/SL/LA etc. collapse correctly)
-mapped AS (
-  SELECT
-    base.player_id,
-    base.season,
-    base.week,
+    weight,
     dim_team_code.team_code,
     dim_team_code.franchise_id,
-    base.player_position,
-    base.jersey_number,
-    base.years_exp,
-    base.weight
-  FROM base
-  LEFT JOIN {{ ref('dim_team_code') }} AS dim_team_code
-    ON dim_team_code.source_team_code = base.team_code
+  FROM {{ ref('stg_weekly_rosters') }} AS stg_weekly_rosters
+  INNER JOIN {{ ref('dim_team_code') }} AS dim_team_code
+    ON dim_team_code.source_team_code = stg_weekly_rosters.team
 ),
 
 -- count weeks per team per season
