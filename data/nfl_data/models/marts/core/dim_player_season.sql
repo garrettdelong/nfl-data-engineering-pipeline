@@ -3,7 +3,6 @@ WITH mapped AS (
     gsis_id AS player_id,
     season,
     week,
-    team AS team_code,
     player_position,
     jersey_number,
     years_exp,

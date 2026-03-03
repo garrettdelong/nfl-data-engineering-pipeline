@@ -6,37 +6,40 @@ models:
     columns:
       - name: game_id
         description: Unique identifier for the game.
-        tests:
+        data_tests:
           - not_null
           - relationships:
-              to: ref('dim_game')
-              field: game_id
+              arguments:
+                to: ref('dim_game')
+                field: game_id
 
       - name: player_id
         description: Unique identifier for the player (gsis_id).
-        tests:
+        data_tests:
           - not_null
           - relationships:
-              to: ref('dim_player')
-              field: player_id
+              arguments:
+                to: ref('dim_player')
+                field: player_id
 
       - name: franchise_id
         description: Franchise identifier for the player for this game.
-        tests:
+        data_tests:
           - relationships:
-              to: ref('dim_franchise')
-              field: franchise_id
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
 
       - name: opponent_franchise_id
         description: Opponent franchise identifier for the player for this game.
-        tests:
+        data_tests:
           - relationships:
-              to: ref('dim_franchise')
-              field: franchise_id
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
 
       - name: game_team_side
         description: Team side for the player in this game. Values are 'home', 'away', or 'unknown'.
-        tests:
+        data_tests:
           - accepted_values:
               values: ['home', 'away', 'unknown']
-             
