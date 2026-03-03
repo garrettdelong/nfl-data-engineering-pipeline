@@ -20,3 +20,8 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+#airflow
+airflow/.env
+airflow/logs/
+airflow/config/

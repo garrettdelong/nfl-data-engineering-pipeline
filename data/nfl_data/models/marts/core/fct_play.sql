@@ -32,7 +32,6 @@ SELECT
     stg_pbp.fumble_forced,
     stg_pbp.series,
     stg_pbp.drive,
-    stg_pbp.series,
     stg_pbp.penalty_team,
     stg_pbp.penalty_player_id,
     stg_pbp.penalty_player_name,
