@@ -4,12 +4,12 @@ models:
   - name: dim_team_code
     columns:
       - name: source_team_code
-        tests:
+        data_tests:
           - not_null
           - unique
 
       - name: team_code
-        tests:
+        data_tests:
           - not_null
           - relationships:
               arguments:
@@ -17,7 +17,7 @@ models:
                 field: team_code
 
       - name: franchise_id
-        tests:
+        data_tests:
           - not_null
           - relationships:
               arguments:

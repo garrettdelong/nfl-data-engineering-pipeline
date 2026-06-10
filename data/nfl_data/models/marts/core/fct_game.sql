@@ -30,9 +30,10 @@ play_agg_game AS (
   SELECT
     fct_play.game_id,
     COUNT(*) AS play_count,
-    SUM(CASE WHEN fct_play.play_type = 'no_play' OR fct_play.play_type IS NULL THEN 1 ELSE 0 END) AS no_play_count,
-    SUM(CASE WHEN fct_play.play_type != 'no_play' OR fct_play.play_type IS NOT NULL THEN 0 ELSE fct_play.epa END) AS epa_sum,
-    AVG(CASE WHEN fct_play.play_type != 'no_play' OR fct_play.play_type IS NOT NULL THEN NULL ELSE fct_play.success END) AS success_rate
+    SUM(CASE WHEN LOWER(fct_play.play_type) = 'no_play' THEN 1 ELSE 0 END) AS no_play_count,
+    SUM(CASE WHEN fct_play.play_type IS NOT NULL AND LOWER(fct_play.play_type) != 'no_play' THEN 1 ELSE 0 END) AS real_play_count,
+    SUM(CASE WHEN fct_play.play_type IS NOT NULL AND LOWER(fct_play.play_type) != 'no_play' THEN fct_play.epa ELSE 0 END) AS epa_sum,
+    AVG(CASE WHEN fct_play.play_type IS NOT NULL AND LOWER(fct_play.play_type) != 'no_play' THEN fct_play.success ELSE NULL END) AS success_rate
   FROM {{ ref('fct_play') }} AS fct_play
   GROUP BY fct_play.game_id
 )
@@ -59,8 +60,9 @@ SELECT
 
   play_agg_game.play_count,
   play_agg_game.no_play_count,
+  play_agg_game.real_play_count,
   play_agg_game.epa_sum,
-  play_agg_game.success_rate,
+  play_agg_game.success_rate
 
 FROM game_context
 LEFT JOIN schedule_measures

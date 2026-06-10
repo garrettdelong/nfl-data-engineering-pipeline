@@ -1,9 +1,9 @@
 SELECT
-  DIM_PLAYER_SEASON.PLAYER_ID,
-  DIM_PLAYER_SEASON.SEASON,
-  COUNT(*) AS ROW_COUNT
-FROM {{ ref('dim_player_season') }} AS DIM_PLAYER_SEASON
+  dim_player_season.player_id,
+  dim_player_season.season,
+  COUNT(*) AS row_count
+FROM {{ ref('dim_player_season') }} AS dim_player_season
 GROUP BY
-  DIM_PLAYER_SEASON.PLAYER_ID,
-  DIM_PLAYER_SEASON.SEASON
+  dim_player_season.player_id,
+  dim_player_season.season
 HAVING COUNT(*) > 1

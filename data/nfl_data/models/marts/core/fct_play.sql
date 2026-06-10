@@ -39,8 +39,8 @@ SELECT
     stg_pbp.penalty_type,
     stg_pbp.penalty
   FROM {{ ref('stg_pbp') }} AS stg_pbp
-  INNER JOIN {{ ref('dim_team_code') }} AS offense_tc
+  LEFT JOIN {{ ref('dim_team_code') }} AS offense_tc
     ON offense_tc.source_team_code = stg_pbp.posteam
-  INNER JOIN {{ ref('dim_team_code') }} AS defense_tc
+  LEFT JOIN {{ ref('dim_team_code') }} AS defense_tc
     ON defense_tc.source_team_code = stg_pbp.defteam
 
