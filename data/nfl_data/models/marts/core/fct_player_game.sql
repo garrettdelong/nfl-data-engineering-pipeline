@@ -57,10 +57,10 @@ player_game_team AS (
         COUNT(*) AS role_play_count,
         ROW_NUMBER() OVER (
             PARTITION BY game_id, player_id
-            ORDER BY COUNT(*) DESC
+            ORDER BY COUNT(*) DESC, franchise_id ASC
         ) AS franchise_rank
     FROM player_play
-    GROUP BY 1, 2, 3
+    GROUP BY game_id, player_id, franchise_id
 
 ),
 
@@ -89,7 +89,7 @@ player_game AS (
         ON player_play.game_id = player_game_team.game_id
         AND player_play.player_id = player_game_team.player_id
         AND player_play.franchise_id = player_game_team.franchise_id
-    GROUP BY 1, 2
+    GROUP BY player_play.game_id, player_play.player_id
 
 )
     SELECT
