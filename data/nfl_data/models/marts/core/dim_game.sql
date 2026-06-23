@@ -49,7 +49,7 @@ SELECT
   home_team_code.team_code AS home_team_code,
   away_team_code.franchise_id AS away_franchise_id,
   away_team_code.team_code AS away_team_code
-FROM {{ ref('stg_schedule') }} AS schedule
+FROM {{ ref('stg_games') }} AS schedule
 INNER JOIN {{ ref('dim_team_code') }} AS home_team_code
   ON home_team_code.source_team_code = schedule.home_team
 INNER JOIN {{ ref('dim_team_code') }} AS away_team_code

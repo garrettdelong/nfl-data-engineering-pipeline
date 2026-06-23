@@ -23,7 +23,7 @@ schedule_measures AS (
     stg_schedule.over_odds,
     stg_schedule.away_rest,
     stg_schedule.home_rest
-  FROM {{ ref('stg_schedule') }} AS stg_schedule
+  FROM {{ ref('stg_games') }} AS stg_schedule
 ),
 
 play_agg_game AS (

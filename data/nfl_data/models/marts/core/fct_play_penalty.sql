@@ -58,7 +58,7 @@ WITH penalty_plays AS (
     stg_pbp.field_goal_attempt,
     stg_pbp.extra_point_attempt
   FROM {{ ref('fct_play') }} AS fct_play
-  INNER JOIN {{ ref('stg_pbp') }} AS stg_pbp
+  INNER JOIN {{ ref('stg_play_by_play') }} AS stg_pbp
     ON stg_pbp.game_id = fct_play.game_id
     AND stg_pbp.play_id = fct_play.play_id
   WHERE fct_play.drive IS NOT NULL

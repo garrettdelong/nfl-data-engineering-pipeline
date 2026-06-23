@@ -38,7 +38,7 @@ SELECT
     stg_pbp.penalty_yards,
     stg_pbp.penalty_type,
     stg_pbp.penalty
-  FROM {{ ref('stg_pbp') }} AS stg_pbp
+  FROM {{ ref('stg_play_by_play') }} AS stg_pbp
   LEFT JOIN {{ ref('dim_team_code') }} AS offense_tc
     ON offense_tc.source_team_code = stg_pbp.posteam
   LEFT JOIN {{ ref('dim_team_code') }} AS defense_tc
