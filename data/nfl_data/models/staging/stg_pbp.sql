@@ -5,7 +5,7 @@
 WITH source AS (
     SELECT
         *
-    FROM {{ source('nfl_raw', 'v_raw_pbp_flat') }}
+    FROM {{ source('nfl_raw', 'v_raw_play_by_play_flat') }}
 )
 
 SELECT PLAY_ID

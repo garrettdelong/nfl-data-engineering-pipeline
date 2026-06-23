@@ -6,16 +6,16 @@ sources:
     database: "{{ 'NFL_RAW' if target.type == 'snowflake' else none }}"
     schema: "{{ 'PLAY_BY_PLAY' if target.type == 'snowflake' else 'main' }}"
     tables:
-      - name: v_raw_pbp_flat
+      - name: v_raw_play_by_play_flat
         description: Play by Play data from nflverse
-      - name: v_raw_player_pbp_stats_flat
-        description: Player Play by Play stats from nflverse
-      - name: v_raw_schedule_flat
+      - name: v_raw_games_flat
         description: Schedule data from nflverse
-      - name: v_raw_stats_team_weekly_flat
-        description: Team weekly stats from nflverse  
-      - name: v_raw_teams_flat
+      - name: v_raw_teams_colors_logos_flat
         description: Teams data from nflverse
-      - name: v_raw_weekly_rosters_flat
-        description: Weekly rosters data from nflverse 
+      - name: v_raw_player_stats_flat
+        description: Player stats from nflverse
+      - name: v_raw_roster_weekly_flat
+        description: Weekly rosters data from nflverse
+      - name: v_raw_stats_team_week_flat
+        description: Team weekly stats from nflverse  
       

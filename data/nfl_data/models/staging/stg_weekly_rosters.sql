@@ -5,7 +5,7 @@
 WITH source AS (
     SELECT
         *
-    FROM {{ source('nfl_raw', 'v_raw_weekly_rosters_flat') }}
+    FROM {{ source('nfl_raw', 'v_raw_roster_weekly_flat') }}
 )
 
 SELECT SEASON

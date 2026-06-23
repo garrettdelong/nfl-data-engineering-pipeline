@@ -5,7 +5,7 @@
 WITH source AS (
     SELECT
         *
-    FROM {{ source('nfl_raw', 'v_raw_teams_flat') }}
+    FROM {{ source('nfl_raw', 'v_raw_teams_colors_logos_flat') }}
 )
 
 SELECT TEAM_ABBR
