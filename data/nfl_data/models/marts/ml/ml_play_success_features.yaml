@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  - name: ml_play_success_features
+    description: Pre-snap feature table for predicting play success at grain game_id + play_id.
+    columns:
+      - name: game_id
+        description: Game identifier. Part of the composite grain.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_game')
+                field: game_id
+
+      - name: play_id
+        description: Play identifier within a game. Part of the composite grain.
+        data_tests:
+          - not_null
+
+      - name: season
+        description: NFL season.
+        data_tests:
+          - not_null
+
+      - name: down
+        description: Offensive down, restricted to eligible first through fourth downs.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+
+      - name: ydstogo
+        description: Yards required for a first down before the play.
+        data_tests:
+          - not_null
+
+      - name: yardline_100
+        description: Distance from the opponent end zone before the play.
+        data_tests:
+          - not_null
+
+      - name: drive
+        description: Drive identifier within the game.
+        data_tests:
+          - not_null
+
+      - name: offense_franchise_id
+        description: Canonical franchise identifier for the offense.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
+
+      - name: defense_franchise_id
+        description: Canonical franchise identifier for the defense.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_franchise')
+                field: franchise_id
+
+      - name: offense_home_away
+        description: Indicates whether the offense is the home or away team.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home', 'away', 'unknown']
+
+      - name: is_successful_play
+        description: Numeric play-success target where 1 is successful and 0 is unsuccessful.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
