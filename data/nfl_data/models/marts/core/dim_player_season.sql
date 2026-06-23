@@ -9,7 +9,7 @@ WITH mapped AS (
     weight,
     dim_team_code.team_code,
     dim_team_code.franchise_id,
-  FROM {{ ref('stg_weekly_rosters') }} AS stg_weekly_rosters
+  FROM {{ ref('stg_roster_weekly') }} AS stg_weekly_rosters
   INNER JOIN {{ ref('dim_team_code') }} AS dim_team_code
     ON dim_team_code.source_team_code = stg_weekly_rosters.team
 ),

@@ -89,7 +89,7 @@ WITH kick_plays AS (
     stg_pbp.special_flag,
     stg_pbp.play_flag
   FROM {{ ref('fct_play') }} AS fct_play
-  INNER JOIN {{ ref('stg_pbp') }} AS stg_pbp
+  INNER JOIN {{ ref('stg_play_by_play') }} AS stg_pbp
     ON stg_pbp.game_id = fct_play.game_id
     AND stg_pbp.play_id = fct_play.play_id
   WHERE fct_play.drive IS NOT NULL

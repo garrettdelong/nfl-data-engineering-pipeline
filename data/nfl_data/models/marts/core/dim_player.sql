@@ -16,7 +16,7 @@ WITH ranked AS (
       PARTITION BY gsis_id
       ORDER BY season DESC, week DESC
     ) AS rn
-  FROM {{ ref('stg_weekly_rosters') }}
+  FROM {{ ref('stg_roster_weekly') }}
   WHERE gsis_id IS NOT NULL
 ),
 
@@ -88,16 +88,16 @@ FROM roster_players
   UNION ALL
 
 SELECT  
-  pbp_players.player_id,
-    NULL AS first_name,
-    NULL AS last_name,
-    NULL AS full_name,
-    NULL AS birth_date,
-    NULL AS height,
-    NULL AS espn_id,
-    NULL AS pfr_id,
-    NULL AS entry_year,
-    NULL AS rookie_year,
-    NULL AS draft_club,
-    NULL AS draft_number 
+  player_id,
+    full_name,
+    first_name,
+    last_name,
+    birth_date,
+    height,
+    espn_id,
+    pfr_id,
+    entry_year,
+    rookie_year,
+    draft_club,
+    draft_number
 FROM missing_players
