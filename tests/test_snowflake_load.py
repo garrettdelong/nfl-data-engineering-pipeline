@@ -11,10 +11,10 @@ import snowflake_load
 class SnowflakeLoadSqlTests(unittest.TestCase):
     def setUp(self):
         self.file_info = {
-            "dataset": "stats_player",
+            "dataset": "stats_team",
             "year": 2024,
-            "s3_key": "stats_players/stats_player_week_2024.parquet",
-            "raw_table": "RAW_STATS_PLAYER_WEEKLY",
+            "s3_key": "stats_teams/stats_team_week_2024.parquet",
+            "raw_table": "RAW_STATS_TEAM_WEEK",
         }
 
     def test_delete_sql_targets_source_file(self):
@@ -26,8 +26,8 @@ class SnowflakeLoadSqlTests(unittest.TestCase):
 
         self.assertEqual(
             sql,
-            "DELETE FROM NFL_RAW.PLAY_BY_PLAY.RAW_STATS_PLAYER_WEEKLY "
-            "WHERE source_file = 'stats_players/stats_player_week_2024.parquet'",
+            "DELETE FROM NFL_RAW.PLAY_BY_PLAY.RAW_STATS_TEAM_WEEK "
+            "WHERE source_file = 'stats_teams/stats_team_week_2024.parquet'",
         )
 
     def test_copy_sql_contains_idempotent_file_load_parts(self):
@@ -38,12 +38,12 @@ class SnowflakeLoadSqlTests(unittest.TestCase):
             schema="PLAY_BY_PLAY",
         )
 
-        self.assertIn("COPY INTO NFL_RAW.PLAY_BY_PLAY.RAW_STATS_PLAYER_WEEKLY", sql)
+        self.assertIn("COPY INTO NFL_RAW.PLAY_BY_PLAY.RAW_STATS_TEAM_WEEK", sql)
         self.assertIn("METADATA$FILENAME", sql)
-        self.assertIn("'stats_player'", sql)
+        self.assertIn("'stats_team'", sql)
         self.assertIn("2024", sql)
         self.assertIn("FROM @NFL_RAW_STAGE", sql)
-        self.assertIn("FILES = ('stats_players/stats_player_week_2024.parquet')", sql)
+        self.assertIn("FILES = ('stats_teams/stats_team_week_2024.parquet')", sql)
         self.assertIn("FORCE = TRUE", sql)
         self.assertIn("ON_ERROR = ABORT_STATEMENT", sql)
 

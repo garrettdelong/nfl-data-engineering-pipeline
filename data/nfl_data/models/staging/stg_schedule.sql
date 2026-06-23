@@ -5,7 +5,7 @@
 WITH source AS (
     SELECT
         *
-    FROM {{ source('nfl_raw', 'v_raw_schedule_flat') }}
+    FROM {{ source('nfl_raw', 'v_raw_games_flat') }}
 )
 
 SELECT GAME_ID

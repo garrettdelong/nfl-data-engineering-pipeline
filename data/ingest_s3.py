@@ -50,13 +50,6 @@ DATASETS = {
         "raw_table": "RAW_ROSTER_WEEKLY",
         "single_file": False,
     },
-    "stats_player": {
-        "file_stem": "stats_player_week",
-        "release": "stats_player",
-        "s3_prefix": "stats_players",
-        "raw_table": "RAW_STATS_PLAYER_WEEK",
-        "single_file": False,
-    },
     "stats_team": {
         "file_stem": "stats_team_week",
         "release": "stats_team",
