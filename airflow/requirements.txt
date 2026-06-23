@@ -2,3 +2,4 @@ apache-airflow==2.9.3
 boto3
 python-dotenv
 apache-airflow-providers-docker
+snowflake-connector-python
