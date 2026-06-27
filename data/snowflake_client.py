@@ -1,5 +1,6 @@
 import os
 import re
+from dataclasses import dataclass
 
 
 required_env_vars = [
@@ -17,6 +18,14 @@ optional_env_vars = [
 ]
 
 identifier_pattern = re.compile(r"^[A-Za-z_][A-Za-z0-9_$]*(\.[A-Za-z_][A-Za-z0-9_$]*)*$")
+
+
+@dataclass(frozen=True)
+class SnowflakeWriteResult:
+    success: bool
+    chunk_count: int
+    row_count: int
+    output: list
 
 
 def validate_identifier(identifier, label):
@@ -76,7 +85,6 @@ def get_snowflake_config_from_env(require_stage=False):
 
 def connect_snowflake(config):
     import snowflake.connector
-    from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives import serialization
 
     passphrase = config.get("private_key_passphrase") or None
@@ -87,7 +95,6 @@ def connect_snowflake(config):
         private_key = serialization.load_pem_private_key(
             key_file.read(),
             password=passphrase,
-            backend=default_backend(),
         )
 
     private_key_der = private_key.private_bytes(
@@ -144,6 +151,14 @@ def write_dataframe_to_table(
 ):
     from snowflake.connector.pandas_tools import write_pandas
 
+    if dataframe.empty:
+        return SnowflakeWriteResult(
+            success=True,
+            chunk_count=0,
+            row_count=0,
+            output=[],
+        )
+
     qualified_name = qualified_table_name(table_name, database, schema)
     table_parts = qualified_name.split(".")
 
@@ -157,11 +172,18 @@ def write_dataframe_to_table(
         schema_name = schema
         unqualified_table_name = table_parts[0]
 
-    return write_pandas(
+    success, chunk_count, row_count, output = write_pandas(
         conn=connection,
         df=dataframe,
         table_name=unqualified_table_name,
         database=database_name,
         schema=schema_name,
         quote_identifiers=False,
+    )
+
+    return SnowflakeWriteResult(
+        success=success,
+        chunk_count=chunk_count,
+        row_count=row_count,
+        output=output,
     )
