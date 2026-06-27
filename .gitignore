@@ -25,3 +25,10 @@ override.tf.json
 airflow/.env
 airflow/logs/
 airflow/config/
+
+# Play success prediction data and generated artifacts
+ml/play_success_prediction/models/
+ml/play_success_prediction/outputs/
+ml/play_success_prediction/data/
+*.joblib
+*.pkl
