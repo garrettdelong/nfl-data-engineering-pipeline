@@ -1,37 +1,24 @@
 import logging
-import os
-import re
+
+try:
+    from snowflake_client import (
+        connect_snowflake,
+        get_snowflake_config_from_env,
+        qualified_table_name,
+        sql_string,
+        validate_identifier,
+    )
+except ModuleNotFoundError:
+    from data.snowflake_client import (
+        connect_snowflake,
+        get_snowflake_config_from_env,
+        qualified_table_name,
+        sql_string,
+        validate_identifier,
+    )
 
 
 logger = logging.getLogger(__name__)
-
-required_env_vars = [
-    "SNOWFLAKE_ACCOUNT",
-    "SNOWFLAKE_USER",
-    "SNOWFLAKE_PRIVATE_KEY_PATH",
-    "SNOWFLAKE_STAGE",
-]
-
-optional_env_vars = [
-    "SNOWFLAKE_ROLE",
-    "SNOWFLAKE_WAREHOUSE",
-    "SNOWFLAKE_DATABASE",
-    "SNOWFLAKE_SCHEMA",
-]
-
-identifier_pattern = re.compile(r"^[A-Za-z_][A-Za-z0-9_$]*(\.[A-Za-z_][A-Za-z0-9_$]*)*$")
-
-
-def validate_identifier(identifier, label):
-    if not identifier_pattern.match(identifier):
-        raise ValueError(f"Invalid Snowflake {label}: {identifier}")
-
-
-def sql_string(value):
-    if value is None:
-        return "NULL"
-
-    return "'" + str(value).replace("'", "''") + "'"
 
 
 def source_year_sql(year):
@@ -45,77 +32,6 @@ def normalize_stage_name(stage_name):
     normalized = stage_name[1:] if stage_name.startswith("@") else stage_name
     validate_identifier(normalized, "stage")
     return normalized
-
-
-def qualified_table_name(raw_table, database=None, schema=None):
-    validate_identifier(raw_table, "raw table")
-
-    if database and schema:
-        validate_identifier(database, "database")
-        validate_identifier(schema, "schema")
-        return f"{database}.{schema}.{raw_table}"
-
-    if schema:
-        validate_identifier(schema, "schema")
-        return f"{schema}.{raw_table}"
-
-    return raw_table
-
-
-def get_snowflake_config_from_env():
-    missing = [name for name in required_env_vars if not os.getenv(name)]
-    if missing:
-        raise RuntimeError(
-            "Missing required Snowflake environment variables: " + ", ".join(missing)
-        )
-
-    config = {
-        "account": os.environ["SNOWFLAKE_ACCOUNT"],
-        "user": os.environ["SNOWFLAKE_USER"],
-        "private_key_path": os.environ["SNOWFLAKE_PRIVATE_KEY_PATH"],
-        "private_key_passphrase": os.getenv("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE", ""),
-        "stage": os.environ["SNOWFLAKE_STAGE"],
-    }
-
-    for env_var in optional_env_vars:
-        if os.getenv(env_var):
-            config[env_var.lower().replace("snowflake_", "")] = os.environ[env_var]
-
-    return config
-
-def connect_snowflake(config):
-    import snowflake.connector
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives import serialization
-
-    passphrase = config.get("private_key_passphrase") or None
-    if passphrase:
-        passphrase = passphrase.encode()
-
-    with open(config["private_key_path"], "rb") as key_file:
-        private_key = serialization.load_pem_private_key(
-            key_file.read(),
-            password=passphrase,
-            backend=default_backend(),
-        )
-
-    private_key_der = private_key.private_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption(),
-    )
-
-    connection_args = {
-        "account": config["account"],
-        "user": config["user"],
-        "private_key": private_key_der,
-    }
-
-    for key in ["role", "warehouse", "database", "schema"]:
-        if config.get(key):
-            connection_args[key] = config[key]
-
-    return snowflake.connector.connect(**connection_args)
 
 
 def build_delete_sql(file_info, database=None, schema=None):
@@ -189,7 +105,7 @@ def load_uploaded_files(uploaded_files, config=None):
         logger.info("no uploaded files to load into snowflake")
         return []
 
-    snowflake_config = config or get_snowflake_config_from_env()
+    snowflake_config = config or get_snowflake_config_from_env(require_stage=True)
     results = []
 
     try:

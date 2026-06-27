@@ -11,8 +11,10 @@ The dbt feature table is implemented and tested:
 
 `data/nfl_data/models/marts/ml/ml_play_success_features.sql`
 
-The Python module is currently a scaffold. Model training, evaluation, and
-artifact generation have not been implemented yet.
+The Python baseline trains from Snowflake and writes model results back to
+Snowflake:
+
+`ml/play_success_prediction/train_model.py`
 
 ## Feature Table
 
@@ -63,16 +65,47 @@ The final table does not include:
 - play description
 - post-play score fields
 
-## Planned Baseline
+## Baseline Training
 
-The first training implementation should:
+The first training implementation:
 
 1. Read `ml_play_success_features` from Snowflake.
-2. Split training and test data chronologically by season.
+2. Split train, validation, and test data chronologically by season.
 3. Train a dummy classifier and logistic regression baseline.
 4. Evaluate accuracy, precision, recall, F1, ROC-AUC, and a confusion matrix.
-5. Save the trained model under `models/`.
-6. Save metrics and predictions under `outputs/`.
+5. Write metrics to `ml_play_success_model_metrics`.
+6. Write test-set predictions to `ml_play_success_predictions`.
+
+The training script does not create Snowflake output tables. Create them first
+with:
+
+`ml/play_success_prediction/sql/create_result_tables.sql`
+
+## Snowflake Configuration
+
+The script uses the shared Snowflake key-pair connection helper in:
+
+`data/snowflake_client.py`
+
+Required environment variables:
+
+- `SNOWFLAKE_ACCOUNT`
+- `SNOWFLAKE_USER`
+- `SNOWFLAKE_PRIVATE_KEY_PATH`
+
+Optional environment variables:
+
+- `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`
+- `SNOWFLAKE_ROLE`
+- `SNOWFLAKE_WAREHOUSE`
+- `SNOWFLAKE_DATABASE`
+- `SNOWFLAKE_SCHEMA`
+
+The default input and output table names are configured in `config.py`.
+
+The feature table is read from the Snowflake database/schema in
+`SNOWFLAKE_DATABASE` and `SNOWFLAKE_SCHEMA`. Model metrics and predictions are
+written to `nfl_analytics.ml_results`.
 
 ## Structure
 
@@ -82,9 +115,10 @@ ml/play_success_prediction/
 |-- config.py
 |-- train_model.py
 |-- requirements.txt
+|-- sql/
 |-- models/
 `-- outputs/
 ```
 
-Generated model artifacts and output files should not be committed unless they
-are intentionally selected as small portfolio examples.
+Generated local model artifacts and output files should not be committed unless
+they are intentionally selected as small portfolio examples.
