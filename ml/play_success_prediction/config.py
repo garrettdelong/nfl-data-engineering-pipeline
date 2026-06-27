@@ -4,8 +4,15 @@ from pathlib import Path
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = PROJECT_DIR.parents[1]
 
-INPUT_CSV_PATH = PROJECT_DIR / "data" / "ml_play_success_features.csv"
+FEATURE_TABLE = "ml_play_success_features"
+FEATURE_DATABASE = "nfl_analytics"
+FEATURE_SCHEMA = "dbt_gdelong_marts"
+RESULT_DATABASE = "nfl_analytics"
+RESULT_SCHEMA = "ml_results"
+METRICS_TABLE = "ml_play_success_model_metrics"
+PREDICTIONS_TABLE = "ml_play_success_predictions"
 
 TARGET_COLUMN = "is_successful_play"
 
@@ -50,12 +57,3 @@ CATEGORICAL_FEATURES = [
 ]
 
 FEATURE_COLUMNS = NUMERIC_FEATURES + CATEGORICAL_FEATURES
-
-MODELS_DIR = PROJECT_DIR / "models"
-OUTPUTS_DIR = PROJECT_DIR / "outputs"
-METRICS_DIR = OUTPUTS_DIR / "metrics"
-PREDICTIONS_DIR = OUTPUTS_DIR / "predictions"
-FIGURES_DIR = OUTPUTS_DIR / "figures"
-
-METRICS_PATH = METRICS_DIR / "baseline_metrics.json"
-MODEL_PATH = MODELS_DIR / "logistic_regression_pipeline.joblib"
