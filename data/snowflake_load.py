@@ -1,4 +1,5 @@
 import logging
+import os
 
 try:
     from snowflake_client import (
@@ -19,6 +20,43 @@ except ModuleNotFoundError:
 
 
 logger = logging.getLogger(__name__)
+
+
+def first_env_value(*names):
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+
+    return None
+
+
+def get_raw_snowflake_config_from_env():
+    config = get_snowflake_config_from_env(require_stage=False)
+
+    database = first_env_value("SNOWFLAKE_RAW_DATABASE", "SNOWFLAKE_DATABASE")
+    schema = first_env_value("SNOWFLAKE_RAW_SCHEMA", "SNOWFLAKE_SCHEMA")
+    stage = first_env_value("SNOWFLAKE_RAW_STAGE", "SNOWFLAKE_STAGE")
+
+    missing = []
+    if not database:
+        missing.append("SNOWFLAKE_RAW_DATABASE")
+    if not schema:
+        missing.append("SNOWFLAKE_RAW_SCHEMA")
+    if not stage:
+        missing.append("SNOWFLAKE_RAW_STAGE")
+
+    if missing:
+        raise RuntimeError(
+            "Missing required Snowflake raw load environment variables: "
+            + ", ".join(missing)
+        )
+
+    config["database"] = database
+    config["schema"] = schema
+    config["stage"] = stage
+
+    return config
 
 
 def source_year_sql(year):
@@ -105,7 +143,7 @@ def load_uploaded_files(uploaded_files, config=None):
         logger.info("no uploaded files to load into snowflake")
         return []
 
-    snowflake_config = config or get_snowflake_config_from_env(require_stage=True)
+    snowflake_config = config or get_raw_snowflake_config_from_env()
     results = []
 
     try:

@@ -1,18 +1,28 @@
 """Configuration for play success prediction."""
 
+import os
 from pathlib import Path
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = PROJECT_DIR.parents[1]
 
-FEATURE_TABLE = "ml_play_success_features"
-FEATURE_DATABASE = "nfl_analytics"
-FEATURE_SCHEMA = "dbt_gdelong_marts"
-RESULT_DATABASE = "nfl_analytics"
-RESULT_SCHEMA = "ml_results"
-METRICS_TABLE = "ml_play_success_model_metrics"
-PREDICTIONS_TABLE = "ml_play_success_predictions"
+FEATURE_TABLE = os.getenv(
+    "SNOWFLAKE_ML_FEATURE_TABLE",
+    "ml_play_success_features",
+)
+FEATURE_DATABASE = os.getenv("SNOWFLAKE_ML_FEATURE_DATABASE", "nfl_analytics")
+FEATURE_SCHEMA = os.getenv("SNOWFLAKE_ML_FEATURE_SCHEMA", "dbt_gdelong_marts")
+RESULT_DATABASE = os.getenv("SNOWFLAKE_ML_RESULTS_DATABASE", "nfl_analytics")
+RESULT_SCHEMA = os.getenv("SNOWFLAKE_ML_RESULTS_SCHEMA", "ml_results")
+METRICS_TABLE = os.getenv(
+    "SNOWFLAKE_ML_METRICS_TABLE",
+    "ml_play_success_model_metrics",
+)
+PREDICTIONS_TABLE = os.getenv(
+    "SNOWFLAKE_ML_PREDICTIONS_TABLE",
+    "ml_play_success_predictions",
+)
 
 TARGET_COLUMN = "is_successful_play"
 

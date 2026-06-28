@@ -12,8 +12,8 @@ sources:
         description: Schedule data from nflverse
       - name: v_raw_teams_colors_logos_flat
         description: Teams data from nflverse
-      - name: v_raw_player_stats_flat
-        description: Player stats from nflverse
+      - name: v_raw_stats_player_week_flat
+        description: Player weekly stats from nflverse
       - name: v_raw_roster_weekly_flat
         description: Weekly rosters data from nflverse
       - name: v_raw_stats_team_week_flat
