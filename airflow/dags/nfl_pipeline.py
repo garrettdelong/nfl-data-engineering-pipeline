@@ -1,36 +1,102 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
+
 DBT_IMAGE = "nfl-dbt:1.11.0"
-PROJECT_DIR = "/opt/project/data/nfl_data"
+DBT_PROJECT_DIR = "/opt/project/data/nfl_data"
 PROFILES_DIR = "/opt/airflow/.dbt"
+INGEST_MANIFEST_PATH = "/opt/project/logs/airflow_ingestion_manifest.json"
+
 HOST_PROJECT = r"C:\coding projects\nfl-data-engineering-pipeline"
 HOST_DBT = r"C:\Users\littl\.dbt"
 HOST_SNOWFLAKE = r"C:\Users\littl\.snowflake"
+
+SNOWFLAKE_COMMON_ENV = {
+    "SNOWFLAKE_ACCOUNT": "{{ var.value.SNOWFLAKE_ACCOUNT }}",
+    "SNOWFLAKE_USER": "{{ var.value.SNOWFLAKE_USER }}",
+    "SNOWFLAKE_ROLE": "{{ var.value.SNOWFLAKE_ROLE }}",
+    "SNOWFLAKE_WAREHOUSE": "{{ var.value.SNOWFLAKE_WAREHOUSE }}",
+    "SNOWFLAKE_PRIVATE_KEY_PATH": "/opt/airflow/.snowflake/rsa_key.p8",
+    "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE": "{{ var.value.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}",
+}
+
+SNOWFLAKE_RAW_LOAD_ENV = {
+    **SNOWFLAKE_COMMON_ENV,
+    "SNOWFLAKE_RAW_DATABASE": "{{ var.value.SNOWFLAKE_RAW_DATABASE }}",
+    "SNOWFLAKE_RAW_SCHEMA": "{{ var.value.SNOWFLAKE_RAW_SCHEMA }}",
+    "SNOWFLAKE_RAW_STAGE": "{{ var.value.SNOWFLAKE_RAW_STAGE }}",
+}
+
+DBT_ENV = {
+    **SNOWFLAKE_COMMON_ENV,
+    "DBT_SNOWFLAKE_DATABASE": "{{ var.value.DBT_SNOWFLAKE_DATABASE }}",
+    "DBT_SNOWFLAKE_SCHEMA": "{{ var.value.DBT_SNOWFLAKE_SCHEMA }}",
+    "SNOWFLAKE_DATABASE": "{{ var.value.DBT_SNOWFLAKE_DATABASE }}",
+    "SNOWFLAKE_SCHEMA": "{{ var.value.DBT_SNOWFLAKE_SCHEMA }}",
+}
+
+ML_ENV = {
+    **SNOWFLAKE_COMMON_ENV,
+    "SNOWFLAKE_ML_FEATURE_DATABASE": "{{ var.value.SNOWFLAKE_ML_FEATURE_DATABASE }}",
+    "SNOWFLAKE_ML_FEATURE_SCHEMA": "{{ var.value.SNOWFLAKE_ML_FEATURE_SCHEMA }}",
+    "SNOWFLAKE_ML_RESULTS_DATABASE": "{{ var.value.SNOWFLAKE_ML_RESULTS_DATABASE }}",
+    "SNOWFLAKE_ML_RESULTS_SCHEMA": "{{ var.value.SNOWFLAKE_ML_RESULTS_SCHEMA }}",
+}
 
 
 with DAG(
     dag_id="nfl_pipeline_v1",
     start_date=datetime(2026, 2, 26),
-    schedule="0 6 * * *",   # daily 6am
+    schedule="0 6 * * *",
     catchup=False,
     tags=["nfl", "pipeline"],
 ) as dag:
+    common_mounts = [
+        Mount(
+            source=HOST_PROJECT,
+            target="/opt/project",
+            type="bind",
+            read_only=False,
+        ),
+        Mount(
+            source=HOST_DBT,
+            target="/opt/airflow/.dbt",
+            type="bind",
+            read_only=True,
+        ),
+        Mount(
+            source=HOST_SNOWFLAKE,
+            target="/opt/airflow/.snowflake",
+            type="bind",
+            read_only=True,
+        ),
+    ]
 
     ingest_all = BashOperator(
         task_id="ingest_all",
-        bash_command="python /opt/project/data/ingest_s3.py --table all",
+        bash_command=(
+            "cd /opt/project && "
+            "python /opt/project/data/ingest_s3.py "
+            "--table all "
+            f"--manifest-output-path {INGEST_MANIFEST_PATH}"
+        ),
     )
 
-    common_mounts = [
-        Mount(source=HOST_PROJECT, target="/opt/project", type="bind", read_only=False),
-        Mount(source=HOST_DBT, target="/opt/airflow/.dbt", type="bind", read_only=True),
-        Mount(source=HOST_SNOWFLAKE, target="/opt/airflow/.snowflake", type="bind", read_only=True),
-    ]
+    load_snowflake_raw = BashOperator(
+        task_id="load_snowflake_raw",
+        bash_command=(
+            "cd /opt/project && "
+            "python /opt/project/data/load_snowflake_raw.py "
+            f"--manifest-path {INGEST_MANIFEST_PATH}"
+        ),
+        env=SNOWFLAKE_RAW_LOAD_ENV,
+        append_env=True,
+    )
 
     dbt_deps = DockerOperator(
         task_id="dbt_deps",
@@ -39,14 +105,12 @@ with DAG(
         auto_remove=True,
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
-        command=f"deps --project-dir {PROJECT_DIR} --profiles-dir {PROFILES_DIR}",
+        command=f"deps --project-dir {DBT_PROJECT_DIR} --profiles-dir {PROFILES_DIR}",
         mounts=common_mounts,
         mount_tmp_dir=False,
         tty=True,
         do_xcom_push=False,
-        environment={
-            "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE": "{{ var.value.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}"
-        },
+        environment=DBT_ENV,
     )
 
     dbt_run = DockerOperator(
@@ -56,14 +120,16 @@ with DAG(
         auto_remove=True,
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
-        command=f"run --project-dir {PROJECT_DIR} --profiles-dir {PROFILES_DIR} --target airflow",
+        command=(
+            f"run --project-dir {DBT_PROJECT_DIR} "
+            f"--profiles-dir {PROFILES_DIR} "
+            "--target airflow"
+        ),
         mounts=common_mounts,
         mount_tmp_dir=False,
         tty=True,
         do_xcom_push=False,
-        environment={
-            "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE": "{{ var.value.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}"
-        },
+        environment=DBT_ENV,
     )
 
     dbt_test = DockerOperator(
@@ -73,14 +139,60 @@ with DAG(
         auto_remove=True,
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
-        command=f"test --project-dir {PROJECT_DIR} --profiles-dir {PROFILES_DIR} --target airflow",
+        command=(
+            f"test --project-dir {DBT_PROJECT_DIR} "
+            f"--profiles-dir {PROFILES_DIR} "
+            "--target airflow"
+        ),
         mounts=common_mounts,
         mount_tmp_dir=False,
         tty=True,
         do_xcom_push=False,
-        environment={
-            "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE": "{{ var.value.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}"
-        },
+        environment=DBT_ENV,
     )
 
-    ingest_all >> dbt_deps >> dbt_run >> dbt_test
+    train_play_success_model = BashOperator(
+        task_id="train_play_success_model",
+        bash_command=(
+            "cd /opt/project && "
+            "python /opt/project/ml/play_success_prediction/train_model.py"
+        ),
+        env=ML_ENV,
+        append_env=True,
+    )
+
+    validate_ml_outputs = BashOperator(
+        task_id="validate_ml_outputs",
+        bash_command=(
+            "cd /opt/project && "
+            "python -c \""
+            "from data.snowflake_client import get_snowflake_config_from_env, connect_snowflake; "
+            "config = get_snowflake_config_from_env(); "
+            "connection = connect_snowflake(config); "
+            "cursor = connection.cursor(); "
+            "cursor.execute('SELECT COUNT(1) FROM nfl_analytics.ml_results.ml_play_success_model_metrics'); "
+            "metrics_count = cursor.fetchone()[0]; "
+            "cursor.execute('SELECT COUNT(1) FROM nfl_analytics.ml_results.ml_play_success_predictions'); "
+            "predictions_count = cursor.fetchone()[0]; "
+            "cursor.close(); "
+            "connection.close(); "
+            "print({'metrics_count': metrics_count, 'predictions_count': predictions_count}); "
+            "raise SystemExit(0 if metrics_count > 0 and predictions_count > 0 else 1)"
+            "\""
+        ),
+        env=ML_ENV,
+        append_env=True,
+    )
+
+    end = EmptyOperator(task_id="end")
+
+    (
+        ingest_all
+        >> load_snowflake_raw
+        >> dbt_deps
+        >> dbt_run
+        >> dbt_test
+        >> train_play_success_model
+        >> validate_ml_outputs
+        >> end
+    )

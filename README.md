@@ -52,7 +52,7 @@ Supported dataset arguments:
 - `pbp`
 - `schedules`
 - `teams`
-- `player_stats`
+- `stats_player`
 - `weekly_rosters`
 - `stats_team`
 - `all`
@@ -90,7 +90,7 @@ Current flattened Snowflake sources:
 - `v_raw_play_by_play_flat`
 - `v_raw_games_flat`
 - `v_raw_teams_colors_logos_flat`
-- `v_raw_player_stats_flat`
+- `v_raw_stats_player_week_flat`
 - `v_raw_roster_weekly_flat`
 - `v_raw_stats_team_week_flat`
 
@@ -103,7 +103,7 @@ Staging models:
 - `stg_play_by_play`
 - `stg_games`
 - `stg_teams_colors_logos`
-- `stg_player_stats`
+- `stg_stats_player_week`
 - `stg_roster_weekly`
 - `stg_stats_team_week`
 
