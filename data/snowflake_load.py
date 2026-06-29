@@ -1,62 +1,19 @@
 import logging
-import os
 
-try:
-    from snowflake_client import (
-        connect_snowflake,
-        get_snowflake_config_from_env,
-        qualified_table_name,
-        sql_string,
-        validate_identifier,
-    )
-except ModuleNotFoundError:
-    from data.snowflake_client import (
-        connect_snowflake,
-        get_snowflake_config_from_env,
-        qualified_table_name,
-        sql_string,
-        validate_identifier,
-    )
+from data.snowflake_client import (
+    connect_snowflake,
+    get_scoped_snowflake_config_from_env,
+    qualified_table_name,
+    sql_string,
+    validate_identifier,
+)
 
 
 logger = logging.getLogger(__name__)
 
 
-def first_env_value(*names):
-    for name in names:
-        value = os.getenv(name)
-        if value:
-            return value
-
-    return None
-
-
 def get_raw_snowflake_config_from_env():
-    config = get_snowflake_config_from_env(require_stage=False)
-
-    database = first_env_value("SNOWFLAKE_RAW_DATABASE", "SNOWFLAKE_DATABASE")
-    schema = first_env_value("SNOWFLAKE_RAW_SCHEMA", "SNOWFLAKE_SCHEMA")
-    stage = first_env_value("SNOWFLAKE_RAW_STAGE", "SNOWFLAKE_STAGE")
-
-    missing = []
-    if not database:
-        missing.append("SNOWFLAKE_RAW_DATABASE")
-    if not schema:
-        missing.append("SNOWFLAKE_RAW_SCHEMA")
-    if not stage:
-        missing.append("SNOWFLAKE_RAW_STAGE")
-
-    if missing:
-        raise RuntimeError(
-            "Missing required Snowflake raw load environment variables: "
-            + ", ".join(missing)
-        )
-
-    config["database"] = database
-    config["schema"] = schema
-    config["stage"] = stage
-
-    return config
+    return get_scoped_snowflake_config_from_env("RAW", require_stage=True)
 
 
 def source_year_sql(year):

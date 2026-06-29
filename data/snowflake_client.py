@@ -40,6 +40,15 @@ def sql_string(value):
     return "'" + str(value).replace("'", "''") + "'"
 
 
+def first_env_value(*names):
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+
+    return None
+
+
 def qualified_table_name(table_name, database=None, schema=None):
     validate_identifier(table_name, "table")
 
@@ -79,6 +88,48 @@ def get_snowflake_config_from_env(require_stage=False):
     for env_var in optional_env_vars:
         if os.getenv(env_var):
             config[env_var.lower().replace("snowflake_", "")] = os.environ[env_var]
+
+    return config
+
+
+def get_scoped_snowflake_config_from_env(
+    scope,
+    require_database=True,
+    require_schema=True,
+    require_stage=False,
+):
+    normalized_scope = scope.upper()
+    config = get_snowflake_config_from_env(require_stage=False)
+
+    database_env_var = f"SNOWFLAKE_{normalized_scope}_DATABASE"
+    schema_env_var = f"SNOWFLAKE_{normalized_scope}_SCHEMA"
+    stage_env_var = f"SNOWFLAKE_{normalized_scope}_STAGE"
+
+    database = first_env_value(database_env_var, "SNOWFLAKE_DATABASE")
+    schema = first_env_value(schema_env_var, "SNOWFLAKE_SCHEMA")
+    stage = first_env_value(stage_env_var, "SNOWFLAKE_STAGE")
+
+    missing = []
+    if require_database and not database:
+        missing.append(database_env_var)
+    if require_schema and not schema:
+        missing.append(schema_env_var)
+    if require_stage and not stage:
+        missing.append(stage_env_var)
+
+    if missing:
+        raise RuntimeError(
+            f"Missing required Snowflake {normalized_scope.lower()} "
+            "environment variables: "
+            + ", ".join(missing)
+        )
+
+    if database:
+        config["database"] = database
+    if schema:
+        config["schema"] = schema
+    if stage:
+        config["stage"] = stage
 
     return config
 

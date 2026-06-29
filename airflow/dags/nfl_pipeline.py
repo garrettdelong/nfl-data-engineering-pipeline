@@ -81,7 +81,7 @@ with DAG(
         task_id="ingest_all",
         bash_command=(
             "cd /opt/project && "
-            "python /opt/project/data/ingest_s3.py "
+            "python -m data.ingest_s3 "
             "--table all "
             f"--manifest-output-path {INGEST_MANIFEST_PATH}"
         ),
@@ -91,7 +91,7 @@ with DAG(
         task_id="load_snowflake_raw",
         bash_command=(
             "cd /opt/project && "
-            "python /opt/project/data/load_snowflake_raw.py "
+            "python -m data.load_snowflake_raw "
             f"--manifest-path {INGEST_MANIFEST_PATH}"
         ),
         env=SNOWFLAKE_RAW_LOAD_ENV,
