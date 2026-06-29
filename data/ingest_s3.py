@@ -15,6 +15,7 @@ from data.cli_args import (
     add_run_id_argument,
 )
 from data.logging_config import configure_logging
+from data.pipeline_audit import record_file_events
 from data.snowflake_load import load_uploaded_files
 
 
@@ -78,6 +79,17 @@ def file_year_label(file_info):
     return file_info["year"] if file_info["year"] is not None else "single"
 
 
+def utc_now():
+    return datetime.utcnow()
+
+
+def timestamp_string(value):
+    if value is None:
+        return None
+
+    return value.isoformat(timespec="seconds")
+
+
 def build_file_info(dataset, dataset_config, file_name, year):
     return {
         "dataset": dataset,
@@ -131,6 +143,7 @@ def build_file_manifest(table_arg, years):
 
 def upload_file(s3_client, file_info):
     year_label = file_year_label(file_info)
+    started_at = utc_now()
 
     logger.info(
         "uploading file dataset=%s year=%s source=%s target=s3://%s/%s",
@@ -148,13 +161,20 @@ def upload_file(s3_client, file_info):
             timeout=REQUEST_TIMEOUT_SECONDS,
         ) as response:
             if response.status_code != 200:
+                finished_at = utc_now()
                 logger.warning(
                     "remote file unavailable dataset=%s year=%s status_code=%s",
                     file_info["dataset"],
                     year_label,
                     response.status_code,
                 )
-                return "failed", f"remote file returned status_code={response.status_code}"
+                return {
+                    "upload_status": "failed",
+                    "error_message": f"remote file returned status_code={response.status_code}",
+                    "started_at": started_at,
+                    "finished_at": finished_at,
+                    "duration_seconds": (finished_at - started_at).total_seconds(),
+                }
 
             s3_client.upload_fileobj(
                 response.raw,
@@ -168,37 +188,63 @@ def upload_file(s3_client, file_info):
             year_label,
             file_info["s3_key"],
         )
-        return "uploaded", None
+        finished_at = utc_now()
+        return {
+            "upload_status": "uploaded",
+            "error_message": None,
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "duration_seconds": (finished_at - started_at).total_seconds(),
+        }
 
     except requests.RequestException as exc:
+        finished_at = utc_now()
         logger.exception(
             "download failed dataset=%s year=%s url=%s",
             file_info["dataset"],
             year_label,
             file_info["url"],
         )
-        return "failed", str(exc)
+        return {
+            "upload_status": "failed",
+            "error_message": str(exc),
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "duration_seconds": (finished_at - started_at).total_seconds(),
+        }
 
     except (BotoCoreError, ClientError, S3UploadFailedError) as exc:
+        finished_at = utc_now()
         logger.exception(
             "s3 upload failed dataset=%s year=%s s3_key=%s",
             file_info["dataset"],
             year_label,
             file_info["s3_key"],
         )
-        return "failed", str(exc)
+        return {
+            "upload_status": "failed",
+            "error_message": str(exc),
+            "started_at": started_at,
+            "finished_at": finished_at,
+            "duration_seconds": (finished_at - started_at).total_seconds(),
+        }
 
 
-def build_manifest_record(file_info, upload_status, error_message):
+def build_manifest_record(file_info, upload_result):
     return {
         "dataset": file_info["dataset"],
         "source_year": file_info["year"],
         "source_url": file_info["url"],
         "s3_bucket": BUCKET_NAME,
         "s3_key": file_info["s3_key"],
-        "upload_status": upload_status,
-        "error_message": error_message,
-        "snowflake_load_eligible": upload_status == "uploaded",
+        "upload_status": upload_result["upload_status"],
+        "snowflake_load_status": "not_attempted",
+        "snowflake_table_name": file_info["raw_table"],
+        "started_at": timestamp_string(upload_result["started_at"]),
+        "finished_at": timestamp_string(upload_result["finished_at"]),
+        "duration_seconds": upload_result["duration_seconds"],
+        "error_message": upload_result["error_message"],
+        "snowflake_load_eligible": upload_result["upload_status"] == "uploaded",
     }
 
 
@@ -224,10 +270,11 @@ def ingest_files(s3_client, files):
     }
 
     for file_info in files:
-        result, error_message = upload_file(s3_client, file_info)
+        upload_result = upload_file(s3_client, file_info)
+        result = upload_result["upload_status"]
         results[result].append(file_info)
         results["manifest_records"].append(
-            build_manifest_record(file_info, result, error_message)
+            build_manifest_record(file_info, upload_result)
         )
 
     logger.info(
@@ -291,6 +338,11 @@ def parse_args(argv=None):
         action="store_true",
         help="Load successfully uploaded files into Snowflake raw tables",
     )
+    parser.add_argument(
+        "--write-audit-events",
+        action="store_true",
+        help="Write ingestion file events to Snowflake audit tables",
+    )
     add_manifest_output_argument(parser)
     parser.add_argument(
         "--start-year",
@@ -327,6 +379,12 @@ def main(args=None):
     s3_client = boto3.client("s3")
     results = ingest_files(s3_client, files)
     write_manifest(results["manifest_records"], args.manifest_output_path)
+
+    if args.write_audit_events:
+        if not args.run_id:
+            raise ValueError("--run-id is required when --write-audit-events is used")
+
+        record_file_events(args.run_id, results["manifest_records"])
 
     if results["failed"]:
         raise RuntimeError(f"Ingestion failed for {len(results['failed'])} file(s)")
