@@ -3,6 +3,11 @@ import json
 import logging
 from pathlib import Path
 
+from data.cli_args import (
+    add_log_level_argument,
+    add_manifest_input_argument,
+    add_run_id_argument,
+)
 from data.ingest_s3 import DATASETS
 from data.logging_config import configure_logging
 from data.snowflake_load import load_uploaded_files
@@ -57,21 +62,20 @@ def get_snowflake_eligible_files(manifest_records):
     ]
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description="Load Snowflake raw tables from an ingestion manifest",
     )
-    parser.add_argument(
-        "--manifest-path",
-        required=True,
-        help="Path to ingestion manifest JSON created by data.ingest_s3",
-    )
+    add_log_level_argument(parser)
+    add_run_id_argument(parser)
+    add_manifest_input_argument(parser)
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = parse_args()
 
     manifest_records = read_manifest(args.manifest_path)
     eligible_files = get_snowflake_eligible_files(manifest_records)
@@ -79,5 +83,6 @@ def main():
 
 
 if __name__ == "__main__":
-    configure_logging()
-    main()
+    parsed_args = parse_args()
+    configure_logging(parsed_args.log_level)
+    main(parsed_args)

@@ -2,6 +2,11 @@ import argparse
 import logging
 from datetime import datetime, timezone
 
+from data.cli_args import (
+    add_environment_name_argument,
+    add_log_level_argument,
+    add_run_id_argument,
+)
 from data.logging_config import configure_logging
 from data.snowflake_client import (
     connect_snowflake,
@@ -471,29 +476,31 @@ WHERE run_id = %s
     )
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="Write pipeline audit metadata")
+    add_log_level_argument(parser)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     start_pipeline = subparsers.add_parser("start-pipeline")
-    start_pipeline.add_argument("--run-id", required=True)
+    add_run_id_argument(start_pipeline, required=True)
     start_pipeline.add_argument("--pipeline-name", required=True)
     start_pipeline.add_argument("--dag-id")
     start_pipeline.add_argument("--airflow-run-id")
     start_pipeline.add_argument("--triggered-by")
-    start_pipeline.add_argument("--environment-name")
+    add_environment_name_argument(start_pipeline)
     start_pipeline.add_argument("--git-commit-sha")
 
     finish_pipeline = subparsers.add_parser("finish-pipeline")
-    finish_pipeline.add_argument("--run-id", required=True)
+    add_run_id_argument(finish_pipeline, required=True)
     finish_pipeline.add_argument("--run-status", required=True)
     finish_pipeline.add_argument("--error-message")
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = parse_args()
 
     if args.command == "start-pipeline":
         start_pipeline_run(
@@ -519,5 +526,6 @@ def main():
 
 
 if __name__ == "__main__":
-    configure_logging()
-    main()
+    parsed_args = parse_args()
+    configure_logging(parsed_args.log_level)
+    main(parsed_args)

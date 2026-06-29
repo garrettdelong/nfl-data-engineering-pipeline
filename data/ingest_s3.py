@@ -9,6 +9,11 @@ import requests
 from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import BotoCoreError, ClientError
 
+from data.cli_args import (
+    add_log_level_argument,
+    add_manifest_output_argument,
+    add_run_id_argument,
+)
 from data.logging_config import configure_logging
 from data.snowflake_load import load_uploaded_files
 
@@ -267,11 +272,13 @@ def default_season_end_year(current_date):
     return current_date.year
 
 
-def parse_args():
+def parse_args(argv=None):
     current_date = datetime.now()
     default_end_year = default_season_end_year(current_date)
 
     parser = argparse.ArgumentParser(description="Ingest nflverse parquet files to S3")
+    add_log_level_argument(parser)
+    add_run_id_argument(parser)
     parser.add_argument(
         "--table",
         type=str,
@@ -284,11 +291,7 @@ def parse_args():
         action="store_true",
         help="Load successfully uploaded files into Snowflake raw tables",
     )
-    parser.add_argument(
-        "--manifest-output-path",
-        type=str,
-        help="Path where ingestion manifest JSON should be written",
-    )
+    add_manifest_output_argument(parser)
     parser.add_argument(
         "--start-year",
         type=int,
@@ -302,11 +305,12 @@ def parse_args():
         help="Last season year to ingest for year-partitioned datasets. Defaults to the prior year before September.",
     )
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = parse_args()
 
     years = build_years(args.start_year, args.end_year)
     files = build_file_manifest(args.table, years)
@@ -332,5 +336,6 @@ def main():
 
 
 if __name__ == "__main__":
-    configure_logging()
-    main()
+    parsed_args = parse_args()
+    configure_logging(parsed_args.log_level)
+    main(parsed_args)
