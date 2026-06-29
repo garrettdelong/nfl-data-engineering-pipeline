@@ -1,11 +1,7 @@
-import sys
 import unittest
-from pathlib import Path
 
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "data"))
-
-import ingest_s3
+from data import ingest_s3
 
 
 class IngestManifestTests(unittest.TestCase):

@@ -1,6 +1,5 @@
 """Train baseline models for NFL play success prediction."""
 
-import sys
 import uuid
 
 import pandas as pd
@@ -29,15 +28,12 @@ from config import (
     METRICS_TABLE,
     NUMERIC_FEATURES,
     PREDICTIONS_TABLE,
-    REPO_ROOT,
     RESULT_DATABASE,
     RESULT_SCHEMA,
     TARGET_COLUMN,
 )
 
-sys.path.insert(0, str(REPO_ROOT))
-
-from data.snowflake_client import (  # noqa: E402
+from data.snowflake_client import (
     connect_snowflake,
     get_snowflake_config_from_env,
     read_table_to_dataframe,

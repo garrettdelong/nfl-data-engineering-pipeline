@@ -3,18 +3,12 @@ import json
 import logging
 from pathlib import Path
 
-from ingest_s3 import DATASETS
-from snowflake_load import load_uploaded_files
+from data.ingest_s3 import DATASETS
+from data.logging_config import configure_logging
+from data.snowflake_load import load_uploaded_files
 
 
 logger = logging.getLogger(__name__)
-
-
-def configure_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(name)s %(levelname)s - %(message)s",
-    )
 
 
 def read_manifest(manifest_path):
@@ -70,14 +64,13 @@ def parse_args():
     parser.add_argument(
         "--manifest-path",
         required=True,
-        help="Path to ingestion manifest JSON created by ingest_s3.py",
+        help="Path to ingestion manifest JSON created by data.ingest_s3",
     )
 
     return parser.parse_args()
 
 
 def main():
-    configure_logging()
     args = parse_args()
 
     manifest_records = read_manifest(args.manifest_path)
@@ -86,4 +79,5 @@ def main():
 
 
 if __name__ == "__main__":
+    configure_logging()
     main()

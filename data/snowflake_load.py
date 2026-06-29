@@ -1,22 +1,13 @@
 import logging
 import os
 
-try:
-    from snowflake_client import (
-        connect_snowflake,
-        get_snowflake_config_from_env,
-        qualified_table_name,
-        sql_string,
-        validate_identifier,
-    )
-except ModuleNotFoundError:
-    from data.snowflake_client import (
-        connect_snowflake,
-        get_snowflake_config_from_env,
-        qualified_table_name,
-        sql_string,
-        validate_identifier,
-    )
+from data.snowflake_client import (
+    connect_snowflake,
+    get_snowflake_config_from_env,
+    qualified_table_name,
+    sql_string,
+    validate_identifier,
+)
 
 
 logger = logging.getLogger(__name__)

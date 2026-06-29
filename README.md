@@ -40,7 +40,7 @@ Airflow orchestrates ingestion and dbt locally through Docker.
 
 ## Ingestion
 
-The main ingestion entry point is `data/ingest_s3.py`. It downloads nflverse
+The main ingestion entry point is `data.ingest_s3`. It downloads nflverse
 release files and streams them into:
 
 ```text
@@ -60,9 +60,9 @@ Supported dataset arguments:
 Example commands:
 
 ```powershell
-python data/ingest_s3.py --table teams
-python data/ingest_s3.py --table pbp --start-year 2024 --end-year 2024
-python data/ingest_s3.py --table pbp --start-year 2024 --end-year 2024 --load-snowflake
+python -m data.ingest_s3 --table teams
+python -m data.ingest_s3 --table pbp --start-year 2024 --end-year 2024
+python -m data.ingest_s3 --table pbp --start-year 2024 --end-year 2024 --load-snowflake
 ```
 
 The script builds a manifest, records uploaded, missing, and failed files, and

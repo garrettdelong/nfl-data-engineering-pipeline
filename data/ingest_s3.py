@@ -9,7 +9,8 @@ import requests
 from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import BotoCoreError, ClientError
 
-from snowflake_load import load_uploaded_files
+from data.logging_config import configure_logging
+from data.snowflake_load import load_uploaded_files
 
 
 BUCKET_NAME = "nfl-pipeline-raw"
@@ -66,13 +67,6 @@ DATASETS = {
 TABLE_CHOICES = list(DATASETS.keys()) + ["all"]
 
 logger = logging.getLogger(__name__)
-
-
-def configure_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(name)s %(levelname)s - %(message)s",
-    )
 
 
 def file_year_label(file_info):
@@ -312,7 +306,6 @@ def parse_args():
 
 
 def main():
-    configure_logging()
     args = parse_args()
 
     years = build_years(args.start_year, args.end_year)
@@ -339,4 +332,5 @@ def main():
 
 
 if __name__ == "__main__":
+    configure_logging()
     main()
