@@ -7,6 +7,10 @@ terraform.tfstate.backup
 # Terraform working directory
 .terraform/
 
+# Terraform plan output
+*.tfplan
+infra/tfplan
+
 # Crash logs
 crash.log
 crash.*.log
@@ -21,10 +25,28 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-#airflow
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local editor settings
+.vscode/
+
+# Local runtime logs
+logs/
+
+# Airflow
 airflow/.env
 airflow/logs/
 airflow/config/
+
+# Empty dbt scaffold placeholders not used by this project
+data/nfl_data/analyses/
+data/nfl_data/macros/
+data/nfl_data/snapshots/
+data/nfl_data/seeds/.gitkeep
+data/nfl_data/tests/.gitkeep
 
 # Play success prediction data and generated artifacts
 ml/play_success_prediction/models/
