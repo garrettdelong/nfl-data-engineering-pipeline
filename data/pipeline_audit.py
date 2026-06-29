@@ -1,12 +1,11 @@
 import argparse
 import logging
-import os
 from datetime import datetime, timezone
 
 from data.logging_config import configure_logging
 from data.snowflake_client import (
     connect_snowflake,
-    get_snowflake_config_from_env,
+    get_scoped_snowflake_config_from_env,
     qualified_table_name,
 )
 
@@ -36,39 +35,8 @@ def seconds_between(started_at, finished_at):
     return (finished_at - started_at).total_seconds()
 
 
-def first_env_value(*names):
-    for name in names:
-        value = os.getenv(name)
-        if value:
-            return value
-
-    return None
-
-
 def get_audit_snowflake_config_from_env():
-    config = get_snowflake_config_from_env(require_stage=False)
-    config["database"] = first_env_value(
-        "SNOWFLAKE_AUDIT_DATABASE",
-        "SNOWFLAKE_DATABASE",
-    )
-    config["schema"] = first_env_value(
-        "SNOWFLAKE_AUDIT_SCHEMA",
-        "SNOWFLAKE_SCHEMA",
-    )
-
-    missing = []
-    if not config.get("database"):
-        missing.append("SNOWFLAKE_AUDIT_DATABASE")
-    if not config.get("schema"):
-        missing.append("SNOWFLAKE_AUDIT_SCHEMA")
-
-    if missing:
-        raise RuntimeError(
-            "Missing required Snowflake audit environment variables: "
-            + ", ".join(missing)
-        )
-
-    return config
+    return get_scoped_snowflake_config_from_env("AUDIT")
 
 
 def audit_table_name(table_name, config):
