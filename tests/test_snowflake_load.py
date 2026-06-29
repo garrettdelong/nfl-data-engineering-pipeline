@@ -56,6 +56,25 @@ class SnowflakeLoadSqlTests(unittest.TestCase):
         self.assertIn("NULL", sql)
         self.assertIn("FILES = ('teams/teams_colors_logos.parquet')", sql)
 
+    def test_get_rows_loaded_sums_copy_results(self):
+        copy_results = [
+            ("file_1.parquet", "LOADED", 10, 10),
+            ("file_2.parquet", "LOADED", 5, 5),
+        ]
+        cursor_description = [
+            ("file",),
+            ("status",),
+            ("rows_parsed",),
+            ("rows_loaded",),
+        ]
+
+        rows_loaded = snowflake_load.get_rows_loaded(
+            copy_results,
+            cursor_description,
+        )
+
+        self.assertEqual(rows_loaded, 15)
+
 
 if __name__ == "__main__":
     unittest.main()

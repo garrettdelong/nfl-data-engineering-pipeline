@@ -304,7 +304,10 @@ SET
     updated_at = CURRENT_TIMESTAMP()
 WHERE run_id = %s
     AND task_name = %s
-    AND attempt_number = %s
+    AND (
+        attempt_number = %s
+        OR task_status = 'running'
+    )
 """.strip()
 
     execute_audit_write(
@@ -495,6 +498,21 @@ def parse_args(argv=None):
     finish_pipeline.add_argument("--run-status", required=True)
     finish_pipeline.add_argument("--error-message")
 
+    start_task = subparsers.add_parser("start-task")
+    add_run_id_argument(start_task, required=True)
+    start_task.add_argument("--task-name", required=True)
+    start_task.add_argument("--attempt-number", type=int, required=True)
+    start_task.add_argument("--log-reference")
+
+    finish_task = subparsers.add_parser("finish-task")
+    add_run_id_argument(finish_task, required=True)
+    finish_task.add_argument("--task-name", required=True)
+    finish_task.add_argument("--attempt-number", type=int, required=True)
+    finish_task.add_argument("--task-status", required=True)
+    finish_task.add_argument("--error-message")
+    finish_task.add_argument("--input-record-count", type=int)
+    finish_task.add_argument("--output-record-count", type=int)
+
     return parser.parse_args(argv)
 
 
@@ -519,6 +537,27 @@ def main(args=None):
             run_id=args.run_id,
             run_status=args.run_status,
             error_message=args.error_message,
+        )
+        return
+
+    if args.command == "start-task":
+        start_task_run(
+            run_id=args.run_id,
+            task_name=args.task_name,
+            attempt_number=args.attempt_number,
+            log_reference=args.log_reference,
+        )
+        return
+
+    if args.command == "finish-task":
+        finish_task_run(
+            run_id=args.run_id,
+            task_name=args.task_name,
+            attempt_number=args.attempt_number,
+            task_status=args.task_status,
+            error_message=args.error_message,
+            input_record_count=args.input_record_count,
+            output_record_count=args.output_record_count,
         )
         return
 

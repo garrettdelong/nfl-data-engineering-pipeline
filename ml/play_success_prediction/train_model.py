@@ -18,7 +18,7 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from config import (
+from ml.play_success_prediction.config import (
     CATEGORICAL_FEATURES,
     FEATURE_DATABASE,
     FEATURE_COLUMNS,

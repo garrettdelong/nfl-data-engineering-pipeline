@@ -6,11 +6,21 @@ from airflow.operators.empty import EmptyOperator
 from airflow.providers.docker.operators.docker import DockerOperator
 from docker.types import Mount
 
+from airflow_audit_callbacks import (
+    audit_pipeline_failure,
+    audit_pipeline_success,
+    audit_task_failure,
+    audit_task_start,
+    audit_task_success,
+)
+
 
 DBT_IMAGE = "nfl-dbt:1.11.0"
 DBT_PROJECT_DIR = "/opt/project/data/nfl_data"
 PROFILES_DIR = "/opt/airflow/.dbt"
 INGEST_MANIFEST_PATH = "/opt/project/logs/airflow_ingestion_manifest.json"
+PIPELINE_RUN_ID = "{{ dag.dag_id }}__{{ run_id }}"
+PIPELINE_ENVIRONMENT_NAME = "{{ var.value.get('PIPELINE_ENVIRONMENT_NAME', 'local') }}"
 
 HOST_PROJECT = r"C:\coding projects\nfl-data-engineering-pipeline"
 HOST_DBT = r"C:\Users\littl\.dbt"
@@ -25,8 +35,16 @@ SNOWFLAKE_COMMON_ENV = {
     "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE": "{{ var.value.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}",
 }
 
+SNOWFLAKE_AUDIT_ENV = {
+    **SNOWFLAKE_COMMON_ENV,
+    "SNOWFLAKE_AUDIT_DATABASE": "{{ var.value.get('SNOWFLAKE_AUDIT_DATABASE', 'NFL_ANALYTICS') }}",
+    "SNOWFLAKE_AUDIT_SCHEMA": "{{ var.value.get('SNOWFLAKE_AUDIT_SCHEMA', 'audit') }}",
+}
+
 SNOWFLAKE_RAW_LOAD_ENV = {
     **SNOWFLAKE_COMMON_ENV,
+    "SNOWFLAKE_AUDIT_DATABASE": "{{ var.value.get('SNOWFLAKE_AUDIT_DATABASE', 'NFL_ANALYTICS') }}",
+    "SNOWFLAKE_AUDIT_SCHEMA": "{{ var.value.get('SNOWFLAKE_AUDIT_SCHEMA', 'audit') }}",
     "SNOWFLAKE_RAW_DATABASE": "{{ var.value.SNOWFLAKE_RAW_DATABASE }}",
     "SNOWFLAKE_RAW_SCHEMA": "{{ var.value.SNOWFLAKE_RAW_SCHEMA }}",
     "SNOWFLAKE_RAW_STAGE": "{{ var.value.SNOWFLAKE_RAW_STAGE }}",
@@ -55,6 +73,13 @@ with DAG(
     schedule="0 6 * * *",
     catchup=False,
     tags=["nfl", "pipeline"],
+    on_success_callback=audit_pipeline_success,
+    on_failure_callback=audit_pipeline_failure,
+    default_args={
+        "on_execute_callback": audit_task_start,
+        "on_success_callback": audit_task_success,
+        "on_failure_callback": audit_task_failure,
+    },
 ) as dag:
     common_mounts = [
         Mount(
@@ -77,14 +102,35 @@ with DAG(
         ),
     ]
 
+    start_pipeline_audit = BashOperator(
+        task_id="start_pipeline_audit",
+        bash_command=(
+            "cd /opt/project && "
+            "python -m data.pipeline_audit "
+            "start-pipeline "
+            f"--run-id \"{PIPELINE_RUN_ID}\" "
+            "--pipeline-name nfl_pipeline_v1 "
+            "--dag-id nfl_pipeline_v1 "
+            f"--airflow-run-id \"{{{{ run_id }}}}\" "
+            "--triggered-by airflow "
+            f"--environment-name \"{PIPELINE_ENVIRONMENT_NAME}\""
+        ),
+        env=SNOWFLAKE_AUDIT_ENV,
+        append_env=True,
+    )
+
     ingest_all = BashOperator(
         task_id="ingest_all",
         bash_command=(
             "cd /opt/project && "
             "python -m data.ingest_s3 "
             "--table all "
+            f"--run-id \"{PIPELINE_RUN_ID}\" "
+            "--write-audit-events "
             f"--manifest-output-path {INGEST_MANIFEST_PATH}"
         ),
+        env=SNOWFLAKE_AUDIT_ENV,
+        append_env=True,
     )
 
     load_snowflake_raw = BashOperator(
@@ -92,6 +138,7 @@ with DAG(
         bash_command=(
             "cd /opt/project && "
             "python -m data.load_snowflake_raw "
+            f"--run-id \"{PIPELINE_RUN_ID}\" "
             f"--manifest-path {INGEST_MANIFEST_PATH}"
         ),
         env=SNOWFLAKE_RAW_LOAD_ENV,
@@ -155,7 +202,7 @@ with DAG(
         task_id="train_play_success_model",
         bash_command=(
             "cd /opt/project && "
-            "python /opt/project/ml/play_success_prediction/train_model.py"
+            "python -m ml.play_success_prediction.train_model"
         ),
         env=ML_ENV,
         append_env=True,
@@ -187,7 +234,8 @@ with DAG(
     end = EmptyOperator(task_id="end")
 
     (
-        ingest_all
+        start_pipeline_audit
+        >> ingest_all
         >> load_snowflake_raw
         >> dbt_deps
         >> dbt_run

@@ -79,7 +79,7 @@ def main(args=None):
 
     manifest_records = read_manifest(args.manifest_path)
     eligible_files = get_snowflake_eligible_files(manifest_records)
-    load_uploaded_files(eligible_files)
+    load_uploaded_files(eligible_files, run_id=args.run_id)
 
 
 if __name__ == "__main__":
