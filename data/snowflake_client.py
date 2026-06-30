@@ -105,9 +105,9 @@ def get_scoped_snowflake_config_from_env(
     schema_env_var = f"SNOWFLAKE_{normalized_scope}_SCHEMA"
     stage_env_var = f"SNOWFLAKE_{normalized_scope}_STAGE"
 
-    database = first_env_value(database_env_var, "SNOWFLAKE_DATABASE")
-    schema = first_env_value(schema_env_var, "SNOWFLAKE_SCHEMA")
-    stage = first_env_value(stage_env_var, "SNOWFLAKE_STAGE")
+    database = first_env_value(database_env_var)
+    schema = first_env_value(schema_env_var)
+    stage = first_env_value(stage_env_var)
 
     missing = []
     if require_database and not database:

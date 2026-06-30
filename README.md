@@ -24,9 +24,13 @@ dbt staging models
         |
         v
 dbt dimensions, facts, and ML features
+        |
+        v
+Python ML training and Snowflake ML result tables
 ```
 
-Airflow orchestrates ingestion and dbt locally through Docker.
+Airflow orchestrates ingestion, Snowflake raw loading, dbt, audit logging, and
+ML training locally through Docker.
 
 ## Technology
 
@@ -36,12 +40,13 @@ Airflow orchestrates ingestion and dbt locally through Docker.
 - dbt for transformations, tests, and documentation
 - Airflow and Docker for local orchestration
 - Terraform for AWS infrastructure
-- Python and scikit-learn planned for baseline machine learning
+- Python and scikit-learn for baseline machine learning
 
 ## Ingestion
 
-The main ingestion entry point is `data.ingest_s3`. It downloads nflverse
-release files and streams them into:
+The main ingestion entry point is `data.ingest_s3`. It expands a dataset/year
+selection into an expected file manifest, checks nflverse release metadata,
+and streams eligible Parquet files into:
 
 ```text
 s3://nfl-pipeline-raw/
@@ -62,18 +67,72 @@ Example commands:
 ```powershell
 python -m data.ingest_s3 --table teams
 python -m data.ingest_s3 --table pbp --start-year 2024 --end-year 2024
-python -m data.ingest_s3 --table pbp --start-year 2024 --end-year 2024 --load-snowflake
+python -m data.ingest_s3 --table teams --sync --dry-run
+python -m data.ingest_s3 --table all --sync --run-id local_sync_all_001 --manifest-output-path logs/ingestion_manifest.json
 ```
 
-The script builds a manifest, records uploaded, missing, and failed files, and
-uses structured logging suitable for Airflow task logs. Missing remote files
-do not fail ingestion, but request, S3, and Snowflake failures produce a
-non-zero task result.
+Sync mode uses HTTP `HEAD` metadata from the remote source and compares it to
+the latest successful metadata in Snowflake. Files are classified as:
+
+- `new`
+- `updated`
+- `unchanged`
+- `missing`
+- `failed`
+
+Real ingestion actions are:
+
+- `uploaded`
+- `skipped_unchanged`
+- `skipped_missing`
+- `failed`
+
+Dry-run actions are:
+
+- `would_upload_new`
+- `would_upload_updated`
+- `would_skip_unchanged`
+- `would_skip_missing`
+- `would_fail`
+
+`--dry-run` does not upload files, write Snowflake metadata, or trigger
+downstream loads. Failed files produce a non-zero task result after the script
+logs a complete summary.
+
+When `--run-id` is supplied on a non-dry run, ingestion writes one row per
+expected source file to:
+
+```text
+nfl_analytics.audit.ingestion_file_manifest
+```
+
+This table stores file state, ingestion action, remote metadata, previous
+metadata, timing, and error details. It does not store Snowflake raw-load
+status.
+
+Ingestion summaries separate source changes from upload activity:
+
+- `changed_file_count` counts files whose remote metadata is `new` or
+  `updated`.
+- `uploaded_count` counts files actually uploaded during the run, including
+  forced uploads from `--replace`.
+- `planned_upload_count` counts files a dry-run would upload.
+
+The sync metadata table requires scoped Snowflake environment variables:
+
+```text
+SNOWFLAKE_INGESTION_METADATA_DATABASE
+SNOWFLAKE_INGESTION_METADATA_SCHEMA
+```
+
+The shared scoped Snowflake config helper does not fall back to generic
+`SNOWFLAKE_DATABASE` or `SNOWFLAKE_SCHEMA`.
 
 ## Snowflake Loading
 
-`data/snowflake_load.py` loads successfully uploaded files into Snowflake raw
-tables using key-pair authentication.
+`data/load_snowflake_raw.py` reads the ingestion manifest and loads only files
+marked as Snowflake-load eligible. `data/snowflake_load.py` contains the shared
+load implementation and uses key-pair authentication.
 
 Loads are idempotent at the source-file level:
 
@@ -84,6 +143,14 @@ Loads are idempotent at the source-file level:
 
 Snowflake credentials, private keys, and dbt profiles are stored outside the
 repository and supplied through environment variables.
+
+Raw loading requires scoped Snowflake variables:
+
+```text
+SNOWFLAKE_RAW_DATABASE
+SNOWFLAKE_RAW_SCHEMA
+SNOWFLAKE_RAW_STAGE
+```
 
 Current flattened Snowflake sources:
 
@@ -178,15 +245,35 @@ ml/play_success_prediction/
 `-- outputs/
 ```
 
-Model training and evaluation are not implemented yet. The planned first
-version uses a chronological season split, a dummy baseline, and logistic
-regression with standard classification metrics.
+The first Python training implementation reads the feature table from
+Snowflake, uses a chronological season split, trains a dummy baseline and
+logistic regression model, and writes metrics and predictions back to
+Snowflake result tables.
 
 Build and test the ML feature table:
 
 ```powershell
 dbt run --project-dir data\nfl_data --select ml_play_success_features
 dbt test --project-dir data\nfl_data --select ml_play_success_features
+```
+
+## Audit Logging
+
+Structured audit metadata is written to Snowflake audit tables:
+
+- `pipeline_run`
+- `pipeline_task_run`
+- `pipeline_file_event`
+- `ingestion_file_manifest`
+
+Airflow remains the source for detailed task logs. Snowflake stores structured
+run/task/file metadata and log references, not full raw log text.
+
+Audit writes require scoped Snowflake variables:
+
+```text
+SNOWFLAKE_AUDIT_DATABASE
+SNOWFLAKE_AUDIT_SCHEMA
 ```
 
 ## Airflow
@@ -197,13 +284,20 @@ inside Airflow containers at `/opt/project`.
 The current DAG is `nfl_pipeline_v1`:
 
 ```text
-ingest_all -> dbt_deps -> dbt_run -> dbt_test
+start_pipeline_audit
+  -> ingest_all
+  -> load_snowflake_raw
+  -> dbt_deps
+  -> dbt_run
+  -> dbt_test
+  -> train_play_success_model
+  -> validate_ml_outputs
+  -> end
 ```
 
-The ingestion task currently runs without `--load-snowflake`. The Python
-ingestion command supports automated Snowflake loading, but that flag still
-needs to be integrated into the DAG before the Airflow workflow controls the
-complete S3-to-Snowflake path.
+The ingestion task runs with `--sync`, writes a manifest, and passes a
+DAG-generated `run_id`. If all files are unchanged, the raw-load task receives
+the manifest, finds zero eligible files, and exits successfully.
 
 Start local Airflow:
 
@@ -237,8 +331,11 @@ infrastructure changes should remain minimal and cost-aware.
 .
 |-- airflow/                  # Local Airflow and Docker configuration
 |-- data/
-|   |-- ingest_s3.py         # nflverse to S3 ingestion
+|   |-- ingest_s3.py         # nflverse to S3 ingestion and sync metadata
+|   |-- load_snowflake_raw.py # Manifest-driven raw load entry point
+|   |-- snowflake_client.py  # Shared Snowflake connection/dataframe helpers
 |   |-- snowflake_load.py    # Idempotent Snowflake raw loading
+|   |-- pipeline_audit.py    # Snowflake audit metadata helpers
 |   `-- nfl_data/            # dbt project
 |-- infra/                    # Terraform configuration
 |-- ml/                       # Machine learning modules
@@ -265,20 +362,22 @@ Snowflake authentication uses a private key stored outside the repository.
 Implemented:
 
 - nflverse ingestion into S3
+- Sync mode for skipping unchanged source files
+- Dry-run mode for safe ingestion previews
+- Manifest handoff between S3 ingestion and Snowflake raw loading
 - Structured ingestion logging and failure handling
-- Optional idempotent Snowflake raw loading
+- Idempotent Snowflake raw loading
 - Snowflake flattened raw views
 - dbt staging, dimensions, facts, and play subfacts
 - dbt data-quality tests
 - Local Airflow orchestration
+- Snowflake audit run/task/file metadata
 - Terraform infrastructure configuration
 - Tested play-success ML feature table
+- Baseline play-success model training and Snowflake result writes
 
 Planned:
 
-- Integrate Snowflake loading into the Airflow DAG
-- Improve ingestion synchronization so unchanged files can be skipped
 - Make large fact tables incremental
 - Add CI/CD
-- Implement and evaluate the baseline play-success model
 - Add a small dashboard or analytics layer
