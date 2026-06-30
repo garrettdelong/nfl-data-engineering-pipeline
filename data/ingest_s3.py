@@ -635,13 +635,10 @@ def build_manifest_record(file_info, file_result):
     }
 
 
-def log_result_details(result_name, files):
-    log_func = logger.error if result_name == "failed" else logger.warning
-
+def log_failed_file_details(files):
     for file_info in files:
-        log_func(
-            "ingestion result=%s dataset=%s year=%s s3_key=%s url=%s",
-            result_name,
+        logger.error(
+            "ingestion failed dataset=%s year=%s s3_key=%s url=%s",
             file_info["dataset"],
             file_year_label(file_info),
             file_info["s3_key"],
@@ -756,7 +753,7 @@ def ingest_files(
             results["failed"].append(file_info)
 
     log_ingestion_summary(results)
-    log_result_details("failed", results["failed"])
+    log_failed_file_details(results["failed"])
 
     return results
 
