@@ -33,7 +33,7 @@ class SnowflakeClientConfigTests(unittest.TestCase):
         self.assertEqual(config["schema"], "PLAY_BY_PLAY")
         self.assertEqual(config["stage"], "NFL_RAW.PLAY_BY_PLAY.stg_nfl_raw")
 
-    def test_scoped_config_falls_back_to_generic_database_and_schema(self):
+    def test_scoped_config_requires_scoped_database_and_schema(self):
         env = {
             **BASE_ENV,
             "SNOWFLAKE_DATABASE": "NFL_ANALYTICS",
@@ -41,7 +41,36 @@ class SnowflakeClientConfigTests(unittest.TestCase):
         }
 
         with patch.dict(os.environ, env, clear=True):
-            config = get_scoped_snowflake_config_from_env("AUDIT")
+            with self.assertRaises(RuntimeError) as context:
+                get_scoped_snowflake_config_from_env("AUDIT")
+
+        self.assertIn("SNOWFLAKE_AUDIT_DATABASE", str(context.exception))
+        self.assertIn("SNOWFLAKE_AUDIT_SCHEMA", str(context.exception))
+
+    def test_scoped_config_ignores_generic_database_schema(self):
+        env = {
+            **BASE_ENV,
+            "SNOWFLAKE_DATABASE": "NFL_RAW",
+            "SNOWFLAKE_SCHEMA": "PLAY_BY_PLAY",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            with self.assertRaises(RuntimeError):
+                get_scoped_snowflake_config_from_env("INGESTION_METADATA")
+
+    def test_scoped_config_uses_scoped_database_schema(self):
+        env = {
+            **BASE_ENV,
+            "SNOWFLAKE_DATABASE": "NFL_RAW",
+            "SNOWFLAKE_SCHEMA": "PLAY_BY_PLAY",
+            "SNOWFLAKE_INGESTION_METADATA_DATABASE": "NFL_ANALYTICS",
+            "SNOWFLAKE_INGESTION_METADATA_SCHEMA": "audit",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            config = get_scoped_snowflake_config_from_env(
+                "INGESTION_METADATA",
+            )
 
         self.assertEqual(config["database"], "NFL_ANALYTICS")
         self.assertEqual(config["schema"], "audit")

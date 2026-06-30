@@ -39,6 +39,8 @@ SNOWFLAKE_AUDIT_ENV = {
     **SNOWFLAKE_COMMON_ENV,
     "SNOWFLAKE_AUDIT_DATABASE": "{{ var.value.get('SNOWFLAKE_AUDIT_DATABASE', 'NFL_ANALYTICS') }}",
     "SNOWFLAKE_AUDIT_SCHEMA": "{{ var.value.get('SNOWFLAKE_AUDIT_SCHEMA', 'audit') }}",
+    "SNOWFLAKE_INGESTION_METADATA_DATABASE": "{{ var.value.get('SNOWFLAKE_INGESTION_METADATA_DATABASE', 'NFL_ANALYTICS') }}",
+    "SNOWFLAKE_INGESTION_METADATA_SCHEMA": "{{ var.value.get('SNOWFLAKE_INGESTION_METADATA_SCHEMA', 'audit') }}",
 }
 
 SNOWFLAKE_RAW_LOAD_ENV = {
@@ -125,6 +127,7 @@ with DAG(
             "cd /opt/project && "
             "python -m data.ingest_s3 "
             "--table all "
+            "--sync "
             f"--run-id \"{PIPELINE_RUN_ID}\" "
             "--write-audit-events "
             f"--manifest-output-path {INGEST_MANIFEST_PATH}"

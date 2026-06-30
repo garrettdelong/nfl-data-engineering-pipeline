@@ -98,14 +98,47 @@ Optional environment variables:
 - `SNOWFLAKE_PRIVATE_KEY_PASSPHRASE`
 - `SNOWFLAKE_ROLE`
 - `SNOWFLAKE_WAREHOUSE`
-- `SNOWFLAKE_DATABASE`
-- `SNOWFLAKE_SCHEMA`
+
+Feature input configuration:
+
+- `SNOWFLAKE_ML_FEATURE_DATABASE`
+- `SNOWFLAKE_ML_FEATURE_SCHEMA`
+- `SNOWFLAKE_ML_FEATURE_TABLE`
+
+Result output configuration:
+
+- `SNOWFLAKE_ML_RESULTS_DATABASE`
+- `SNOWFLAKE_ML_RESULTS_SCHEMA`
+- `SNOWFLAKE_ML_METRICS_TABLE`
+- `SNOWFLAKE_ML_PREDICTIONS_TABLE`
 
 The default input and output table names are configured in `config.py`.
 
-The feature table is read from the Snowflake database/schema in
-`SNOWFLAKE_DATABASE` and `SNOWFLAKE_SCHEMA`. Model metrics and predictions are
-written to `nfl_analytics.ml_results`.
+By default, the feature table is read from:
+
+```text
+nfl_analytics.dbt_gdelong_marts.ml_play_success_features
+```
+
+Model metrics and predictions are written to:
+
+```text
+nfl_analytics.ml_results.ml_play_success_model_metrics
+nfl_analytics.ml_results.ml_play_success_predictions
+```
+
+The training script does not create those result tables. Create them before
+running the model.
+
+## Run Command
+
+From the repository root:
+
+```powershell
+python -m ml.play_success_prediction.train_model
+```
+
+Airflow runs the same module path from `/opt/project`.
 
 ## Structure
 
