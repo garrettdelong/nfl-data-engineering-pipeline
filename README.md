@@ -110,6 +110,14 @@ This table stores file state, ingestion action, remote metadata, previous
 metadata, timing, and error details. It does not store Snowflake raw-load
 status.
 
+Ingestion summaries separate source changes from upload activity:
+
+- `changed_file_count` counts files whose remote metadata is `new` or
+  `updated`.
+- `uploaded_count` counts files actually uploaded during the run, including
+  forced uploads from `--replace`.
+- `planned_upload_count` counts files a dry-run would upload.
+
 The sync metadata table requires scoped Snowflake environment variables:
 
 ```text

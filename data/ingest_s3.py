@@ -770,12 +770,19 @@ def build_batch_summary(
         state: len(results["states"][state])
         for state in FILE_STATES
     }
+    uploaded_count = len(results["actions"]["uploaded"])
+    planned_upload_count = (
+        len(results["actions"]["would_upload_new"])
+        + len(results["actions"]["would_upload_updated"])
+    )
     changed_file_count = state_counts["new"] + state_counts["updated"]
 
     if state_counts["failed"] > 0:
         batch_status = "failed"
     elif state_counts["missing"] > 0:
         batch_status = "success_with_missing"
+    elif uploaded_count > 0:
+        batch_status = "success_with_uploads"
     elif changed_file_count > 0:
         batch_status = "success_with_changes"
     else:
@@ -794,20 +801,32 @@ def build_batch_summary(
         "unchanged_count": state_counts["unchanged"],
         "missing_count": state_counts["missing"],
         "failed_count": state_counts["failed"],
+        "uploaded_count": uploaded_count,
+        "planned_upload_count": planned_upload_count,
         "changed_file_count": changed_file_count,
         "batch_status": batch_status,
     }
 
 
 def log_ingestion_summary(results):
+    uploaded_count = len(results["actions"]["uploaded"])
+    planned_upload_count = (
+        len(results["actions"]["would_upload_new"])
+        + len(results["actions"]["would_upload_updated"])
+    )
+    changed_file_count = len(results["states"]["new"]) + len(
+        results["states"]["updated"]
+    )
+
     logger.info(
-        "ingestion summary uploaded=%s updated=%s unchanged=%s missing=%s failed=%s changed_files=%s",
-        len(results["actions"]["uploaded"]),
+        "ingestion summary uploaded=%s planned_uploads=%s updated=%s unchanged=%s missing=%s failed=%s changed_files=%s",
+        uploaded_count,
+        planned_upload_count,
         len(results["states"]["updated"]),
         len(results["states"]["unchanged"]),
         len(results["states"]["missing"]),
         len(results["states"]["failed"]),
-        len(results["states"]["new"]) + len(results["states"]["updated"]),
+        changed_file_count,
     )
 
 

@@ -273,6 +273,54 @@ class IngestManifestTests(unittest.TestCase):
         lookup_previous.assert_called_once_with([file_info])
         self.assertEqual(result, {})
 
+    def test_batch_summary_separates_uploaded_and_changed_counts(self):
+        file_info = ingest_s3.build_file_manifest("teams", [2025])[0]
+        results = {
+            "states": {state: [] for state in ingest_s3.FILE_STATES},
+            "actions": {action: [] for action in ingest_s3.INGESTION_ACTIONS},
+            "file_results": [{"s3_key": file_info["s3_key"]}],
+        }
+        results["states"]["unchanged"].append(file_info)
+        results["actions"]["uploaded"].append(file_info)
+
+        batch_summary = ingest_s3.build_batch_summary(
+            run_id="test_run",
+            run_type="sync",
+            table_arg="teams",
+            start_year=2025,
+            end_year=2025,
+            results=results,
+        )
+
+        self.assertEqual(batch_summary["changed_file_count"], 0)
+        self.assertEqual(batch_summary["uploaded_count"], 1)
+        self.assertEqual(batch_summary["planned_upload_count"], 0)
+        self.assertEqual(batch_summary["batch_status"], "success_with_uploads")
+
+    def test_batch_summary_tracks_dry_run_planned_uploads(self):
+        file_info = ingest_s3.build_file_manifest("teams", [2025])[0]
+        results = {
+            "states": {state: [] for state in ingest_s3.FILE_STATES},
+            "actions": {action: [] for action in ingest_s3.INGESTION_ACTIONS},
+            "file_results": [{"s3_key": file_info["s3_key"]}],
+        }
+        results["states"]["new"].append(file_info)
+        results["actions"]["would_upload_new"].append(file_info)
+
+        batch_summary = ingest_s3.build_batch_summary(
+            run_id="test_run",
+            run_type="dry_run",
+            table_arg="teams",
+            start_year=2025,
+            end_year=2025,
+            results=results,
+        )
+
+        self.assertEqual(batch_summary["changed_file_count"], 1)
+        self.assertEqual(batch_summary["uploaded_count"], 0)
+        self.assertEqual(batch_summary["planned_upload_count"], 1)
+        self.assertEqual(batch_summary["batch_status"], "success_with_changes")
+
     def test_main_skips_metadata_write_without_run_id(self):
         args = ingest_s3.parse_args(
             [
