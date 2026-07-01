@@ -3,7 +3,9 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import BranchPythonOperator
 from airflow.providers.docker.operators.docker import DockerOperator
+from airflow.utils.trigger_rule import TriggerRule
 from docker.types import Mount
 
 from airflow_audit_callbacks import (
@@ -13,6 +15,7 @@ from airflow_audit_callbacks import (
     audit_task_start,
     audit_task_success,
 )
+from airflow_ingestion_branching import choose_downstream_path
 
 
 DBT_IMAGE = "nfl-dbt:1.11.0"
@@ -136,6 +139,12 @@ with DAG(
         append_env=True,
     )
 
+    choose_ingestion_path = BranchPythonOperator(
+        task_id="choose_ingestion_path",
+        python_callable=choose_downstream_path,
+        op_kwargs={"manifest_path": INGEST_MANIFEST_PATH},
+    )
+
     load_snowflake_raw = BashOperator(
         task_id="load_snowflake_raw",
         bash_command=(
@@ -234,11 +243,19 @@ with DAG(
         append_env=True,
     )
 
-    end = EmptyOperator(task_id="end")
+    end = EmptyOperator(
+        task_id="end",
+        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
+    )
 
     (
         start_pipeline_audit
         >> ingest_all
+        >> choose_ingestion_path
+    )
+
+    (
+        choose_ingestion_path
         >> load_snowflake_raw
         >> dbt_deps
         >> dbt_run
@@ -247,3 +264,5 @@ with DAG(
         >> validate_ml_outputs
         >> end
     )
+
+    choose_ingestion_path >> end

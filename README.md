@@ -286,6 +286,7 @@ The current DAG is `nfl_pipeline_v1`:
 ```text
 start_pipeline_audit
   -> ingest_all
+  -> choose_ingestion_path
   -> load_snowflake_raw
   -> dbt_deps
   -> dbt_run
@@ -296,8 +297,21 @@ start_pipeline_audit
 ```
 
 The ingestion task runs with `--sync`, writes a manifest, and passes a
-DAG-generated `run_id`. If all files are unchanged, the raw-load task receives
-the manifest, finds zero eligible files, and exits successfully.
+DAG-generated `run_id`. After ingestion, `choose_ingestion_path` reads the
+manifest and skips the raw load, dbt, and ML tasks when no files are eligible
+for Snowflake loading.
+
+To force downstream tasks even when no new files were uploaded, trigger the DAG
+with this run config:
+
+```json
+{
+  "force_downstream": true
+}
+```
+
+You can also set the Airflow Variable `NFL_PIPELINE_FORCE_DOWNSTREAM` to
+`true`, but the DAG run config is preferred for one-off manual runs.
 
 Start local Airflow:
 
