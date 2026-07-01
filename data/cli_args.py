@@ -7,6 +7,16 @@ LOG_LEVEL_CHOICES = [
 ]
 
 
+def parse_truthy(value):
+    if isinstance(value, bool):
+        return value
+
+    if value is None:
+        return False
+
+    return str(value).strip().lower() in {"1", "true", "yes", "y"}
+
+
 def add_run_id_argument(parser, required=False):
     parser.add_argument(
         "--run-id",

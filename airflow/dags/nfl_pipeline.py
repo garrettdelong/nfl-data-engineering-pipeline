@@ -157,6 +157,20 @@ with DAG(
         append_env=True,
     )
 
+    build_dbt_selectors = BashOperator(
+        task_id="build_dbt_selectors",
+        bash_command=(
+            "cd /opt/project && "
+            "python -m data.dbt_selectors "
+            f"--run-id \"{PIPELINE_RUN_ID}\" "
+            "--force-downstream "
+            "\"{{ dag_run.conf.get('force_downstream', var.value.get('NFL_PIPELINE_FORCE_DOWNSTREAM', 'false')) }}\""
+        ),
+        env=SNOWFLAKE_AUDIT_ENV,
+        append_env=True,
+        do_xcom_push=True,
+    )
+
     dbt_deps = DockerOperator(
         task_id="dbt_deps",
         image=DBT_IMAGE,
@@ -172,36 +186,18 @@ with DAG(
         environment=DBT_ENV,
     )
 
-    dbt_run = DockerOperator(
-        task_id="dbt_run",
+    dbt_build = DockerOperator(
+        task_id="dbt_build",
         image=DBT_IMAGE,
         api_version="auto",
         auto_remove=True,
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
         command=(
-            f"run --project-dir {DBT_PROJECT_DIR} "
+            f"build --project-dir {DBT_PROJECT_DIR} "
             f"--profiles-dir {PROFILES_DIR} "
-            "--target airflow"
-        ),
-        mounts=common_mounts,
-        mount_tmp_dir=False,
-        tty=True,
-        do_xcom_push=False,
-        environment=DBT_ENV,
-    )
-
-    dbt_test = DockerOperator(
-        task_id="dbt_test",
-        image=DBT_IMAGE,
-        api_version="auto",
-        auto_remove=True,
-        docker_url="unix://var/run/docker.sock",
-        network_mode="bridge",
-        command=(
-            f"test --project-dir {DBT_PROJECT_DIR} "
-            f"--profiles-dir {PROFILES_DIR} "
-            "--target airflow"
+            "--target airflow "
+            "{{ ti.xcom_pull(task_ids='build_dbt_selectors') }}"
         ),
         mounts=common_mounts,
         mount_tmp_dir=False,
@@ -257,9 +253,9 @@ with DAG(
     (
         choose_ingestion_path
         >> load_snowflake_raw
+        >> build_dbt_selectors
         >> dbt_deps
-        >> dbt_run
-        >> dbt_test
+        >> dbt_build
         >> train_play_success_model
         >> validate_ml_outputs
         >> end

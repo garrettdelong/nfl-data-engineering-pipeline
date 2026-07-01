@@ -1,21 +1,13 @@
 import logging
 
+from data.cli_args import parse_truthy
+
 
 logger = logging.getLogger(__name__)
 
 FORCE_DOWNSTREAM_VARIABLE = "NFL_PIPELINE_FORCE_DOWNSTREAM"
 CONTINUE_TASK_ID = "load_snowflake_raw"
 SKIP_TASK_ID = "end"
-
-
-def parse_truthy(value):
-    if isinstance(value, bool):
-        return value
-
-    if value is None:
-        return False
-
-    return str(value).strip().lower() in {"1", "true", "yes", "y"}
 
 
 def get_force_downstream(context, variable_getter=None):

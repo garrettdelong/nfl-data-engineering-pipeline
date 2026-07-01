@@ -288,9 +288,9 @@ start_pipeline_audit
   -> ingest_all
   -> choose_ingestion_path
   -> load_snowflake_raw
+  -> build_dbt_selectors
   -> dbt_deps
-  -> dbt_run
-  -> dbt_test
+  -> dbt_build
   -> train_play_success_model
   -> validate_ml_outputs
   -> end
@@ -300,6 +300,25 @@ The ingestion task runs with `--sync`, writes a manifest, and passes a
 DAG-generated `run_id`. After ingestion, `choose_ingestion_path` reads the
 manifest and skips the raw load, dbt, and ML tasks when no files are eligible
 for Snowflake loading.
+
+When files are uploaded, `build_dbt_selectors` queries
+`nfl_analytics.audit.ingestion_file_manifest` for distinct uploaded datasets
+for the current `run_id` and builds a targeted dbt command:
+
+```text
+dbt build --select <dataset selectors>
+```
+
+The current dataset-to-selector mapping is:
+
+- `pbp` -> `stg_play_by_play+`
+- `schedules` -> `stg_games+`
+- `teams` -> `stg_teams_colors_logos+`
+- `weekly_rosters` -> `stg_roster_weekly+`
+- `stats_player` -> `stg_stats_player_week+`
+- `stats_team` -> `stg_stats_team_week+`
+
+Selectors are deduplicated before the dbt command is built.
 
 To force downstream tasks even when no new files were uploaded, trigger the DAG
 with this run config:
@@ -311,7 +330,8 @@ with this run config:
 ```
 
 You can also set the Airflow Variable `NFL_PIPELINE_FORCE_DOWNSTREAM` to
-`true`, but the DAG run config is preferred for one-off manual runs.
+`true`, but the DAG run config is preferred for one-off manual runs. When
+forced with no uploaded datasets, dbt runs the default full `dbt build`.
 
 Start local Airflow:
 
