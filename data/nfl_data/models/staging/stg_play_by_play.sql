@@ -380,4 +380,8 @@ SELECT PLAY_ID
     , XYAC_FD
     , XPASS
     , PASS_OE
+    , SOURCE_FILE AS source_file
+    , SOURCE_DATASET AS source_dataset
+    , SOURCE_YEAR AS source_year
+    , LOADED_AT AS loaded_at
 FROM SOURCE
