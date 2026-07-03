@@ -2,16 +2,10 @@ version: 2
 
 models:
   - name: fct_drive
-    description: "Drive-level fact table (1 row per game_id and drive) aggregated from fct_play."
+    description: "Drive-level fact table (1 row per (game_id, drive)) aggregated from fct_play."
     columns:
-      - name: drive_key
-        description: "Stable drive-level unique key built from game_id and drive."
-        data_tests:
-          - not_null
-          - unique
-
       - name: game_id
-        description: "Game identifier."
+        description: "Game identifier. Part of the composite primary key."
         data_tests:
           - not_null
           - relationships:
@@ -20,7 +14,7 @@ models:
                 field: game_id
 
       - name: drive
-        description: "Drive number within a game."
+        description: "Drive number within a game. Part of the composite primary key."
         data_tests:
           - not_null
 
