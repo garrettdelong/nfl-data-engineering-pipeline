@@ -2,10 +2,16 @@ version: 2
 
 models:
   - name: fct_play
-    description: "Play-level fact table (1 row per play). Primary key is the composite (game_id, play_id)."
+    description: "Play-level fact table (1 row per play). Primary key is play_key, built from game_id, play_id, and drive."
     columns:
+      - name: play_key
+        description: "Stable play-level unique key built from game_id, play_id, and drive."
+        data_tests:
+          - not_null
+          - unique
+
       - name: game_id
-        description: "Game identifier. Part of the composite primary key."
+        description: "Game identifier."
         data_tests:
           - not_null
           - relationships:
@@ -14,7 +20,7 @@ models:
                 field: game_id
 
       - name: play_id
-        description: "Play identifier within a game. Part of the composite primary key."
+        description: "Play identifier within a game."
         data_tests:
           - not_null
 

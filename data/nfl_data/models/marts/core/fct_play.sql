@@ -1,4 +1,12 @@
+{{ config(
+    materialized = 'incremental',
+    unique_key = 'play_key',
+    incremental_strategy = 'merge',
+    on_schema_change = 'sync_all_columns'
+) }}
+
 SELECT
+    stg_pbp.game_id || '-' || stg_pbp.play_id || '-' || COALESCE(CAST(stg_pbp.drive AS VARCHAR), 'no_drive') AS play_key,
     stg_pbp.game_id,
     stg_pbp.play_id,
     stg_pbp.season,
@@ -37,10 +45,26 @@ SELECT
     stg_pbp.penalty_player_name,
     stg_pbp.penalty_yards,
     stg_pbp.penalty_type,
-    stg_pbp.penalty
-  FROM {{ ref('stg_play_by_play') }} AS stg_pbp
-  LEFT JOIN {{ ref('dim_team_code') }} AS offense_tc
+    stg_pbp.penalty,
+    stg_pbp.source_file,
+    stg_pbp.source_dataset,
+    stg_pbp.source_year,
+    stg_pbp.loaded_at
+FROM {{ ref('stg_play_by_play') }} AS stg_pbp
+LEFT JOIN {{ ref('dim_team_code') }} AS offense_tc
     ON offense_tc.source_team_code = stg_pbp.posteam
-  LEFT JOIN {{ ref('dim_team_code') }} AS defense_tc
+LEFT JOIN {{ ref('dim_team_code') }} AS defense_tc
     ON defense_tc.source_team_code = stg_pbp.defteam
-
+{% if is_incremental() %}
+WHERE stg_pbp.loaded_at >= DATEADD(
+    day,
+    -{{ var('incremental_lookback_days', 3) }},
+    COALESCE(
+        (
+            SELECT MAX(loaded_at)
+            FROM {{ this }}
+        ),
+        CAST('1900-01-01' AS TIMESTAMP)
+    )
+)
+{% endif %}
