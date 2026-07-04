@@ -83,6 +83,9 @@ WITH rush_plays AS (
     AND COALESCE(stg_pbp.two_point_attempt, 0) = 0
     AND COALESCE(stg_pbp.qb_kneel, 0) = 0
     AND COALESCE(stg_pbp.sack, 0) = 0
+    AND COALESCE(stg_pbp.special_teams_play, 0) = 0
+    AND COALESCE(stg_pbp.special_flag, 0) = 0
+    AND LOWER(fct_play.play_type) NOT IN ('field_goal', 'extra_point', 'kickoff', 'punt')
     AND (
       COALESCE(stg_pbp.rush_attempt, 0) = 1
       OR COALESCE(stg_pbp.qb_scramble, 0) = 1

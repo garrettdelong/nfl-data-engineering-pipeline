@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: mart_chargers_game_summary
+    description: "Tableau-ready Chargers game summary mart with one row per Chargers game."
+    columns:
+      - name: game_id
+        description: "Game identifier. Primary key for the mart."
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('dim_game')
+                field: game_id
