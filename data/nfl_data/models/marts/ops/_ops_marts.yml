@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: mart_dashboard_freshness
+    description: "Tableau-friendly pipeline freshness mart with one row per audited pipeline run."
+    columns:
+      - name: run_id
+        description: "Pipeline run identifier. Primary key for the freshness mart."
+        data_tests:
+          - not_null
+          - unique
+
+      - name: refresh_decision
+        description: "Decision describing whether the pipeline had uploaded files, skipped, failed, or could not be classified."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - run_uploaded_files
+                  - skip_no_uploaded_files
+                  - failed
+                  - unknown
+
+      - name: freshness_status
+        description: "Dashboard freshness classification based on pipeline failures and time since the latest successful source check."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - fresh
+                  - warning
+                  - stale
+                  - failed
+
+      - name: dbt_refresh_status
+        description: "Status describing whether dbt refreshed for uploaded files, failed, was not needed, or could not be classified."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - refreshed
+                  - not_needed
+                  - failed
+                  - unknown
