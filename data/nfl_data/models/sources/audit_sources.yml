@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: audit
+    description: "Pipeline audit metadata written by Airflow and Python pipeline tasks."
+    database: "{{ var('audit_database', target.database) }}"
+    schema: "{{ var('audit_schema', 'audit') }}"
+    tables:
+      - name: pipeline_run
+        description: "One row per pipeline execution."
+      - name: pipeline_task_run
+        description: "One row per pipeline task attempt."
+      - name: ingestion_file_manifest
+        description: "One row per expected ingestion source file."
